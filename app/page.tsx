@@ -5,49 +5,83 @@ import { Code2, Twitter, Linkedin, Github } from 'lucide-react'
 import Link from 'next/link'
 import { ProjectLink } from '@/components/project-link'
 import { Section } from '@/components/section'
-import { supabase, type Profile } from '@/lib/supabase/config'
+import { supabase, type Profile, type Building, type GithubRepo } from '@/lib/supabase/config'
 
 const defaultProfile: Profile = {
   id: crypto.randomUUID(),
-  name: 'Railly Hugo',
-  title: 'Hunter',
+  name: 'Umutcan Edizaslan',
+  title: 'MR.Creator',
   subtitle: 'Software Engineer ~ AI Master\'s Student',
   present_text: [
     'I work as a full-stack engineer at Globant, contributing to Disney O&I Engineering Team.',
     'I like to build developer tools for myself and make them open source for the community.'
-  ]
+  ],
+  social_links: {
+    twitter: '',
+    linkedin: '',
+    github: ''
+  }
+}
+
+// Açıklama metnini kısaltmak için yardımcı fonksiyon
+function truncateDescription(description: string, maxLength: number = 150): string {
+  if (!description) return '';
+  if (description.length <= maxLength) return description;
+  return description.slice(0, maxLength).trim() + '...';
 }
 
 export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaultProfile)
+  const [buildings, setBuildings] = useState<Building[]>([])
+  const [selectedRepos, setSelectedRepos] = useState<GithubRepo[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchProfile() {
+    async function fetchData() {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .limit(1)
-          .maybeSingle()
+        console.log('Fetching homepage data...');
+        
+        const [profileRes, buildingsRes, reposRes] = await Promise.all([
+          supabase.from('profiles').select('*').limit(1).maybeSingle(),
+          supabase.from('buildings').select('*').order('order_index'),
+          supabase.from('github_repos').select('*').eq('selected', true)
+        ])
 
-        if (error) {
-          console.error('Error fetching profile:', error)
-          return // Keep using default profile
+        console.log('Profile response:', profileRes);
+
+        if (profileRes.data) {
+          // Ensure social_links exists and is properly structured
+          const profileData = {
+            ...profileRes.data,
+            social_links: {
+              twitter: profileRes.data.social_links?.twitter || '',
+              linkedin: profileRes.data.social_links?.linkedin || '',
+              github: profileRes.data.social_links?.github || ''
+            }
+          }
+          console.log('Setting profile data:', profileData);
+          setProfile(profileData)
         }
 
-        if (data) {
-          setProfile(data)
+        if (buildingsRes.data) {
+          setBuildings(buildingsRes.data)
+        }
+
+        if (reposRes.data) {
+          setSelectedRepos(reposRes.data)
         }
       } catch (err) {
-        console.error('Error fetching profile:', err)
-        // Keep using default profile
+        console.error('Error fetching homepage data:', err)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchProfile()
+    fetchData()
+
+    // Refresh data every 30 seconds instead of 5
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   if (isLoading) {
@@ -80,7 +114,7 @@ export default function Home() {
         
         <div className="space-y-4">
           <h3 className="text-[17px] font-medium">Present</h3>
-          {profile.present_text.map((text, index) => (
+          {profile.present_text.slice(0, 3).map((text, index) => (
             <p key={index} className="text-[15px] text-muted-foreground leading-relaxed">
               {text}
             </p>
@@ -90,44 +124,27 @@ export default function Home() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
         <Section title="Building">
-          <ProjectLink
-            href="#"
-            title="Logit"
-            description="Documenting my Low Level + Math Journey"
-          />
-          <ProjectLink
-            href="#"
-            title="Crafter Station"
-            description="Digital lab for crafting new ideas and projects"
-            external
-          />
-          <ProjectLink
-            href="#"
-            title="Tinte"
-            description="An opinionated VS Code theme generator"
-            external
-          />
+          {buildings.map((building) => (
+            <ProjectLink
+              key={building.id}
+              href="#"
+              title={building.title}
+              description={building.description}
+              external={building.external}
+            />
+          ))}
         </Section>
 
         <Section title="Open Source">
-          <ProjectLink
-            href="#"
-            title="One Hunter Theme"
-            description="VS Code theme inspired by Vercel and Flexoki"
-            external
-          />
-          <ProjectLink
-            href="#"
-            title="shadcn/ui customizer"
-            description="Tune your shadcn/ui themes with color pickers"
-            external
-          />
-          <ProjectLink
-            href="#"
-            title="Obsidian Simple Flashcards"
-            description="Turn fenced code blocks into flashcards in Obsidian"
-            external
-          />
+          {selectedRepos.map((repo) => (
+            <ProjectLink
+              key={repo.id}
+              href={repo.repo_url}
+              title={repo.repo_name}
+              description={truncateDescription(repo.description || '')}
+              external
+            />
+          ))}
         </Section>
 
         <Section title="Explore">
@@ -139,17 +156,42 @@ export default function Home() {
           <div>
             <h4 className="font-medium mb-2 text-[15px]">Social Media</h4>
             <div className="flex items-center gap-2">
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Twitter className="w-[18px] h-[18px]" />
-              </Link>
-              <span className="text-muted-foreground">,</span>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Linkedin className="w-[18px] h-[18px]" />
-              </Link>
-              <span className="text-muted-foreground">,</span>
-              <Link href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Github className="w-[18px] h-[18px]" />
-              </Link>
+              {profile.social_links?.twitter && (
+                <>
+                  <Link 
+                    href={profile.social_links.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Twitter className="w-[18px] h-[18px]" />
+                  </Link>
+                  <span className="text-muted-foreground">,</span>
+                </>
+              )}
+              {profile.social_links?.linkedin && (
+                <>
+                  <Link 
+                    href={profile.social_links.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Linkedin className="w-[18px] h-[18px]" />
+                  </Link>
+                  <span className="text-muted-foreground">,</span>
+                </>
+              )}
+              {profile.social_links?.github && (
+                <Link 
+                  href={profile.social_links.github}
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Github className="w-[18px] h-[18px]" />
+                </Link>
+              )}
             </div>
           </div>
         </Section>

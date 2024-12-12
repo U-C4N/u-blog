@@ -1,28 +1,30 @@
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 
 interface ProjectLinkProps {
   href: string
   title: string
   description: string
   external?: boolean
-  icon?: React.ReactNode
 }
 
-export function ProjectLink({ href, title, description, external, icon }: ProjectLinkProps) {
+export function ProjectLink({ href, title, description, external }: ProjectLinkProps) {
   return (
-    <div>
-      <Link 
-        href={href} 
-        className="group inline-flex items-center gap-2 font-medium hover:underline mb-2"
-        target={external ? "_blank" : undefined}
-        rel={external ? "noopener noreferrer" : undefined}
-      >
-        {icon}
-        {title}
-        {external && <ArrowUpRight className="w-3.5 h-3.5" />}
-      </Link>
-      <p className="text-[15px] text-muted-foreground leading-relaxed">{description}</p>
-    </div>
+    <Link
+      href={href}
+      target={external ? '_blank' : undefined}
+      rel={external ? 'noopener noreferrer' : undefined}
+      className="block group"
+    >
+      <div className="flex items-center gap-1">
+        <h3 className="font-medium text-[15px] group-hover:text-primary transition-colors">
+          {title}
+        </h3>
+        {external && <ExternalLink className="w-3 h-3 text-muted-foreground" />}
+      </div>
+      <p className="text-[14px] text-muted-foreground mt-1 line-clamp-3">
+        {description}
+      </p>
+    </Link>
   )
 }
