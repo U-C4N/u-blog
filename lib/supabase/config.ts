@@ -55,6 +55,7 @@ export type Building = {
   title: string
   description: string
   external: boolean
+  url?: string
   order_index: number
   created_at?: string
   updated_at?: string
