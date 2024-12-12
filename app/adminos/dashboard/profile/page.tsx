@@ -579,7 +579,7 @@ export default function ProfilePage() {
 
               {buildings.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                  No buildings yet. Click "Add Building" to create one.
+                  No buildings yet. Click &quot;Add Building&quot; to create one.
                 </div>
               )}
             </div>

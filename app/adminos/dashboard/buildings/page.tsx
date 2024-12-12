@@ -121,7 +121,7 @@ export default function BuildingsPage() {
 
         {buildings.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            No buildings yet. Click "Add Building" to create one.
+            No buildings yet. Click &quot;Add Building&quot; to create one.
           </div>
         )}
       </div>
