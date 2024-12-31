@@ -2,6 +2,12 @@ import { Metadata } from 'next'
 import { supabase } from '@/lib/supabase/config'
 import { EditPostForm } from './edit-post-form'
 
+interface PageProps {
+  params: {
+    id: string
+  }
+}
+
 export async function generateStaticParams() {
   const { data: posts } = await supabase
     .from('posts')
@@ -12,7 +18,7 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { data: post } = await supabase
     .from('posts')
     .select('title')
@@ -20,11 +26,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .single()
 
   return {
-    title: post?.title ? `Edit: ${post.title}` : 'Edit Post',
+    title: `Edit ${post?.title || 'Post'}`
   }
 }
 
-export default async function EditPostPage({ params }: { params: { id: string } }) {
+export default async function EditPostPage({ params }: PageProps) {
   const { data: post } = await supabase
     .from('posts')
     .select('*')
