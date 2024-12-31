@@ -1,10 +1,19 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { supabase, type Post } from '@/lib/supabase/config'
 
-// This is required for static site generation with dynamic routes
+export const dynamic = 'force-dynamic'
+
+type PageParams = Promise<{
+  slug: string
+}>
+
+type Props = {
+  params: PageParams
+}
+
 export async function generateStaticParams() {
   const { data: posts } = await supabase
     .from('posts')
@@ -16,11 +25,12 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const resolvedParams = await params
   const { data: post } = await supabase
     .from('posts')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single()
 
   return {
@@ -44,8 +54,9 @@ async function getPost(slug: string): Promise<Post | null> {
   return data
 }
 
-export default async function BlogPost({ params }: { params: { slug: string } }) {
-  const post = await getPost(params.slug)
+export default async function Page({ params }: Props) {
+  const resolvedParams = await params
+  const post = await getPost(resolvedParams.slug)
 
   if (!post) {
     return (
@@ -67,7 +78,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   }
 
   const wordCount = post.content.trim().split(/\s+/).length
-  const readingTime = Math.ceil(wordCount / 200) // Assuming 200 words per minute
+  const readingTime = Math.ceil(wordCount / 200)
 
   return (
     <div className="max-w-[1000px] mx-auto px-6 py-16">
