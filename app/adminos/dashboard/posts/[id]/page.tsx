@@ -4,16 +4,15 @@ import { EditPostForm } from './edit-post-form'
 
 export const dynamic = 'force-dynamic'
 
-interface PageParams {
+type PageParams = Promise<{
   id: string
-}
+}>
 
-interface PageProps {
+type Props = {
   params: PageParams
-  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export async function generateStaticParams(): Promise<PageParams[]> {
+export async function generateStaticParams() {
   const { data: posts } = await supabase
     .from('posts')
     .select('id')
@@ -24,12 +23,13 @@ export async function generateStaticParams(): Promise<PageParams[]> {
 }
 
 export async function generateMetadata(
-  { params }: PageProps
+  { params }: Props
 ): Promise<Metadata> {
+  const resolvedParams = await params
   const { data: post } = await supabase
     .from('posts')
     .select('title')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single()
 
   return {
@@ -38,11 +38,12 @@ export async function generateMetadata(
   }
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params }: Props) {
+  const resolvedParams = await params
   const { data: post } = await supabase
     .from('posts')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single()
 
   return <EditPostForm initialPost={post} />
