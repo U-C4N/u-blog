@@ -1,24 +1,33 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// These are safe to use on the client as they are prefixed with NEXT_PUBLIC
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Server-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
 
-// Client-side Supabase client
+// Server-side Supabase client (for API routes and server components)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false
+  }
+})
+
+// Client-side Supabase client (for client components)
 export const getSupabaseBrowser = () => {
-  return createClient(
-    // These are safe to use on the client as they are prefixed with NEXT_PUBLIC
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: true
-      }
+  if (typeof window === 'undefined') {
+    throw new Error('getSupabaseBrowser can only be called in the browser')
+  }
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      storageKey: 'supabase.auth.token',
+      storage: window.localStorage
     }
-  )
+  })
 }
 
 // Types
