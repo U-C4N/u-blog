@@ -1,12 +1,13 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase/config'
 import { EditPostForm } from './edit-post-form'
 
+type DynamicParams = true
+
+export const dynamicParams: DynamicParams = true
+
 type Props = {
-  params: {
-    id: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: { id: string }
 }
 
 export async function generateStaticParams() {
@@ -19,23 +20,26 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(
+  props: Props
+): Promise<Metadata> {
   const { data: post } = await supabase
     .from('posts')
     .select('title')
-    .eq('id', params.id)
+    .eq('id', props.params.id)
     .single()
 
   return {
-    title: `Edit ${post?.title || 'Post'}`
+    title: `Edit ${post?.title || 'Post'}`,
+    description: `Edit post ${post?.title || ''}`,
   }
 }
 
-export default async function EditPostPage({ params }: Props) {
+export default async function Page(props: Props) {
   const { data: post } = await supabase
     .from('posts')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', props.params.id)
     .single()
 
   return <EditPostForm initialPost={post} />
