@@ -1,11 +1,36 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Use public environment variables for client-side
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Server-side Supabase client (for API routes and server components)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Client-side Supabase client
+let browserSupabase: ReturnType<typeof createClient> | null = null
+
+if (typeof window !== 'undefined') {
+  browserSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+export const getSupabaseBrowser = () => {
+  if (!browserSupabase) {
+    browserSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  }
+  return browserSupabase
+}
+
+// Types
 export type Profile = {
   id: string
   name: string
