@@ -22,9 +22,7 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata(
-  { params }: Props
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params
   const { data: post } = await supabase
     .from('posts')
