@@ -2,15 +2,18 @@ import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase/config'
 import { EditPostForm } from './edit-post-form'
 
-type DynamicParams = true
+export const dynamic = 'force-dynamic'
 
-export const dynamicParams: DynamicParams = true
-
-type Props = {
-  params: { id: string }
+interface PageParams {
+  id: string
 }
 
-export async function generateStaticParams() {
+interface PageProps {
+  params: PageParams
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export async function generateStaticParams(): Promise<PageParams[]> {
   const { data: posts } = await supabase
     .from('posts')
     .select('id')
@@ -21,12 +24,12 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata(
-  props: Props
+  { params }: PageProps
 ): Promise<Metadata> {
   const { data: post } = await supabase
     .from('posts')
     .select('title')
-    .eq('id', props.params.id)
+    .eq('id', params.id)
     .single()
 
   return {
@@ -35,11 +38,11 @@ export async function generateMetadata(
   }
 }
 
-export default async function Page(props: Props) {
+export default async function Page({ params }: PageProps) {
   const { data: post } = await supabase
     .from('posts')
     .select('*')
-    .eq('id', props.params.id)
+    .eq('id', params.id)
     .single()
 
   return <EditPostForm initialPost={post} />
