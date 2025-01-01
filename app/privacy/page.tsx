@@ -5,80 +5,98 @@ import React from 'react'
 export default function PrivacyPage() {
   return (
     <main className="max-w-4xl mx-auto px-6 py-16">
-      <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
+      <h1 className="text-4xl font-bold mb-8">Privacy Policy for U-Blog Chrome Extension</h1>
 
       <div className="prose prose-lg dark:prose-invert">
-        <h2>1. Information We Collect</h2>
-        <p>
-          We collect information you provide directly to us when you:
-        </p>
-        <ul>
-          <li>Create an account</li>
-          <li>Create or edit blog posts</li>
-          <li>Upload images</li>
-          <li>Interact with our services</li>
-        </ul>
-
-        <h2>2. How We Use Your Information</h2>
-        <p>
-          We use the information we collect to:
-        </p>
-        <ul>
-          <li>Provide and maintain our services</li>
-          <li>Improve user experience</li>
-          <li>Send important notifications</li>
-          <li>Prevent fraud and abuse</li>
-        </ul>
-
-        <h2>3. Information Sharing</h2>
-        <p>
-          We do not sell or share your personal information with third parties except:
-        </p>
-        <ul>
-          <li>With your consent</li>
-          <li>To comply with legal obligations</li>
-          <li>To protect our rights and safety</li>
-        </ul>
-
-        <h2>4. Data Security</h2>
-        <p>
-          We implement appropriate security measures to protect your information:
-        </p>
-        <ul>
-          <li>Encryption in transit and at rest</li>
-          <li>Regular security audits</li>
-          <li>Access controls and monitoring</li>
-        </ul>
-
-        <h2>5. Your Rights</h2>
-        <p>
-          You have the right to:
-        </p>
-        <ul>
-          <li>Access your personal information</li>
-          <li>Correct inaccurate data</li>
-          <li>Request deletion of your data</li>
-          <li>Object to data processing</li>
-        </ul>
-
-        <h2>6. Contact Us</h2>
-        <p>
-          If you have any questions about this Privacy Policy, please contact us at:
-        </p>
-        <ul>
-          <li>Email: privacy@u-blog.com</li>
-          <li>Twitter: @UEdizaslan</li>
-          <li>GitHub: U-C4N</li>
-        </ul>
-
-        <h2>7. Changes to This Policy</h2>
-        <p>
-          We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
-        </p>
-
-        <p className="text-sm text-muted-foreground mt-8">
+        <p className="text-lg">
           Last updated: January 1, 2024
         </p>
+
+        <h2>1. Data Collection</h2>
+        <p>
+          Our Chrome extension collects minimal data necessary for functionality:
+        </p>
+        <ul>
+          <li>Browser storage data for settings and preferences</li>
+          <li>Temporary data for extension functionality</li>
+          <li>No personal information is collected</li>
+        </ul>
+
+        <h2>2. Browser Permissions</h2>
+        <p>
+          The extension requires these permissions:
+        </p>
+        <ul>
+          <li>Storage: To save your preferences</li>
+          <li>Tabs: To interact with browser tabs</li>
+          <li>Active Tab: To access the current webpage</li>
+        </ul>
+
+        <h2>3. Data Usage</h2>
+        <p>
+          We use collected data solely for:
+        </p>
+        <ul>
+          <li>Providing extension functionality</li>
+          <li>Improving user experience</li>
+          <li>Debugging and error tracking</li>
+        </ul>
+
+        <h2>4. Third-Party Services</h2>
+        <p>
+          Our extension:
+        </p>
+        <ul>
+          <li>Does not share data with third parties</li>
+          <li>Does not use analytics services</li>
+          <li>Does not track user behavior</li>
+        </ul>
+
+        <h2>5. Data Storage</h2>
+        <p>
+          Data storage practices:
+        </p>
+        <ul>
+          <li>All data is stored locally in your browser</li>
+          <li>No cloud storage or external servers used</li>
+          <li>Data is cleared when extension is uninstalled</li>
+        </ul>
+
+        <h2>6. User Rights</h2>
+        <p>
+          As a user, you can:
+        </p>
+        <ul>
+          <li>Clear stored data anytime</li>
+          <li>Disable extension permissions</li>
+          <li>Uninstall extension to remove all data</li>
+        </ul>
+
+        <h2>7. Updates</h2>
+        <p>
+          When we update this policy:
+        </p>
+        <ul>
+          <li>Changes will be noted in Chrome Web Store</li>
+          <li>Major changes will be notified in-extension</li>
+          <li>Previous versions will be archived</li>
+        </ul>
+
+        <h2>8. Contact</h2>
+        <p>
+          For questions or concerns:
+        </p>
+        <ul>
+          <li>GitHub: <a href="https://github.com/U-C4N" target="_blank" rel="noopener noreferrer">@U-C4N</a></li>
+          <li>Twitter: <a href="https://twitter.com/UEdizaslan" target="_blank" rel="noopener noreferrer">@UEdizaslan</a></li>
+          <li>Email: privacy@u-blog.com</li>
+        </ul>
+
+        <div className="bg-muted/20 p-4 rounded-lg mt-8">
+          <p className="text-sm text-muted-foreground">
+            Note: This extension is designed with privacy in mind. We collect only what's necessary for functionality and store everything locally on your device.
+          </p>
+        </div>
       </div>
     </main>
   )
