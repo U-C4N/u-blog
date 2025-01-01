@@ -1,7 +1,7 @@
 import { env } from '@/env.mjs'
 
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
-const DEEPSEEK_API_KEY = env.DEEPSEEK_API_KEY
+const DEEPSEEK_API_KEY = env.NEXT_PUBLIC_DEEPSEEK_API_KEY
 
 export async function fixGrammar(text: string): Promise<string> {
   try {
