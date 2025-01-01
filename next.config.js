@@ -9,7 +9,15 @@ const nextConfig = {
         hostname: '**',
       },
     ],
-  }
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/privacy.html',
+        destination: '/privacy',
+      },
+    ]
+  },
 };
 
 module.exports = nextConfig;
