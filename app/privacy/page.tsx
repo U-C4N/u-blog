@@ -94,7 +94,7 @@ export default function PrivacyPage() {
 
         <div className="bg-muted/20 p-4 rounded-lg mt-8">
           <p className="text-sm text-muted-foreground">
-            Note: This extension is designed with privacy in mind. We collect only what's necessary for functionality and store everything locally on your device.
+            Note: This extension is designed with privacy in mind. We collect only what&apos;s necessary for functionality and store everything locally on your device.
           </p>
         </div>
       </div>
