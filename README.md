@@ -1,8 +1,78 @@
-## Author
+# U-Blog ✨
 
-<p align="left">
-<b>Umutcan Edizaslan:</b>
-<a href="https://github.com/U-C4N" target="blank"><img align="center" src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Github-Dark.svg" alt="TutTrue" height="30" width="40" /></a>
-<a href="https://x.com/UEdizaslan" target="blank"><img align="center" src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Twitter.svg" height="30" width="40" /></a>
-<a href="https://discord.gg/2Tutcj6u" target="blank"><img align="center" src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Discord.svg" height="30" width="40" /></a>
-</p>
+A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeScript.
+
+## 🚀 Features
+
+### Rich Content Editor
+- 📝 Markdown support with live preview
+- 🎨 Syntax highlighting for code blocks
+- 📸 Image upload with drag & drop
+- 🔄 Auto-save and unsaved changes detection
+
+### Admin Dashboard
+- 📊 Post management
+- 📱 Responsive design
+- 🔒 Secure authentication
+- 🎯 SEO optimization
+
+### Security
+- 🛡️ XSS protection
+- 🔐 CSRF protection
+- 🧪 Input sanitization
+- 🚦 Rate limiting
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 14
+- **Database:** Supabase
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Editor:** React MD Editor
+- **Storage:** Supabase Storage
+
+## 🚦 Getting Started
+
+1. Clone the repository:
+```bash
+git clone https://github.com/U-C4N/u-blog.git
+cd u-blog
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+
+4. Start the development server:
+```bash
+npm run dev
+```
+
+## 📝 Environment Variables
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/U-C4N/u-blog/issues).
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Supabase](https://supabase.io/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [React MD Editor](https://uiwjs.github.io/react-md-editor/)
