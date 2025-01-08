@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Code2, Twitter, Linkedin, Github } from 'lucide-react'
+import { Code2, Twitter, Linkedin, Github, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 import { ProjectLink } from '@/components/project-link'
 import { Section } from '@/components/section'
-import { supabase, type Profile, type Building, type GithubRepo } from '@/lib/supabase/config'
+import { supabase, type Profile, type Building, type GithubRepo, type Prompt } from '@/lib/supabase/config'
+import { Button } from '@/components/ui/button'
 
 const defaultProfile: Profile = {
   id: crypto.randomUUID(),
@@ -23,7 +24,6 @@ const defaultProfile: Profile = {
   }
 }
 
-// Açıklama metnini kısaltmak için yardımcı fonksiyon
 function truncateDescription(description: string, maxLength: number = 150): string {
   if (!description) return '';
   if (description.length <= maxLength) return description;
@@ -34,23 +34,25 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile>(defaultProfile)
   const [buildings, setBuildings] = useState<Building[]>([])
   const [selectedRepos, setSelectedRepos] = useState<GithubRepo[]>([])
+  const [prompts, setPrompts] = useState<Prompt[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
       try {
         console.log('Fetching homepage data...');
         
-        const [profileRes, buildingsRes, reposRes] = await Promise.all([
+        const [profileRes, buildingsRes, reposRes, promptsRes] = await Promise.all([
           supabase.from('profiles').select('*').limit(1).maybeSingle(),
           supabase.from('buildings').select('*').order('order_index'),
-          supabase.from('github_repos').select('*').eq('selected', true)
+          supabase.from('github_repos').select('*').eq('selected', true),
+          supabase.from('prompts').select('*').order('created_at', { ascending: false })
         ])
 
         console.log('Profile response:', profileRes);
 
         if (profileRes.data) {
-          // Ensure social_links exists and is properly structured
           const profileData = {
             ...profileRes.data,
             social_links: {
@@ -70,6 +72,10 @@ export default function Home() {
         if (reposRes.data) {
           setSelectedRepos(reposRes.data)
         }
+
+        if (promptsRes.data) {
+          setPrompts(promptsRes.data)
+        }
       } catch (err) {
         console.error('Error fetching homepage data:', err)
       } finally {
@@ -79,10 +85,19 @@ export default function Home() {
 
     fetchData()
 
-    // Refresh data every 30 seconds instead of 5
     const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  const handleCopyPrompt = async (prompt: Prompt) => {
+    try {
+      await navigator.clipboard.writeText(prompt.content);
+      setCopiedPromptId(prompt.id);
+      setTimeout(() => setCopiedPromptId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -153,6 +168,37 @@ export default function Home() {
             title="Writing"
             description="Thoughts on technology, design, and life"
           />
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <ProjectLink
+                href="/prompts"
+                title="Prompts"
+                description="Collection of useful AI prompts"
+              />
+            </div>
+            {prompts[0] && (
+              <div className="bg-card p-4 rounded-lg border">
+                <div className="flex justify-between items-start gap-4 mb-2">
+                  <h4 className="font-medium text-sm">{prompts[0].title}</h4>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 hover:bg-transparent"
+                    onClick={() => handleCopyPrompt(prompts[0])}
+                  >
+                    {copiedPromptId === prompts[0].id ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {prompts[0].content}
+                </p>
+              </div>
+            )}
+          </div>
           <div>
             <h4 className="font-medium mb-2 text-[15px]">Social Media</h4>
             <div className="flex items-center gap-2">

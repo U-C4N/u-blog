@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Code2, LogOut, PenSquare, User, BarChart2, Gauge } from 'lucide-react'
+import { Code2, LogOut, PenSquare, User, BarChart2, Gauge, MessageSquare } from 'lucide-react'
 import { Section } from '@/components/section'
 import { ProjectLink } from '@/components/project-link'
 
@@ -55,6 +55,12 @@ export default function DashboardPage() {
             title="Blog Posts"
             description="Manage your blog posts and articles"
             icon={<PenSquare className="w-5 h-5" />}
+          />
+          <ProjectLink
+            href="/adminos/dashboard/prompts"
+            title="Prompts"
+            description="Manage your AI prompts collection"
+            icon={<MessageSquare className="w-5 h-5" />}
           />
           <ProjectLink
             href="/adminos/dashboard/profile"

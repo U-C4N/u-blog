@@ -88,3 +88,11 @@ export type GithubRepo = {
   created_at?: string
   updated_at?: string
 }
+
+export type Prompt = {
+  id: string
+  title: string
+  content: string
+  created_at?: string
+  updated_at?: string
+}
