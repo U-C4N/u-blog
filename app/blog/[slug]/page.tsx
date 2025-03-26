@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { supabase, type Post } from '@/lib/supabase/config'
 
 export const dynamic = 'force-dynamic'
@@ -108,7 +109,22 @@ export default async function Page({ params }: Props) {
         </div>
 
         <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
-          <ReactMarkdown>{post.content}</ReactMarkdown>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            components={{
+              table: props => (
+                <div className="overflow-x-auto my-8">
+                  <table className="border-collapse w-full" {...props} />
+                </div>
+              ),
+              thead: props => <thead className="bg-muted/30" {...props} />,
+              tr: props => <tr className="border-b border-muted" {...props} />,
+              th: props => <th className="py-2 px-4 text-left font-semibold" {...props} />,
+              td: props => <td className="py-2 px-4" {...props} />
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
       </article>
     </div>

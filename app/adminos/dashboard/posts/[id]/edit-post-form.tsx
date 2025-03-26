@@ -13,6 +13,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import dynamic from 'next/dynamic'
 
+// Dynamic import for MDEditor
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => mod.default),
   { ssr: false }
@@ -171,7 +172,23 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file) return
     
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      setError('Image size should be less than 5MB')
+      return
+    }
+
     setIsUploading(true)
+    setError(null)
+
     try {
       const supabase = getSupabaseBrowser()
       
@@ -180,7 +197,6 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
       
       // Upload to Supabase Storage
-      console.log('Uploading file:', fileName)
       const { data, error } = await supabase
         .storage
         .from('blog-images')
@@ -194,37 +210,31 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
         throw error
       }
 
-      console.log('Upload successful:', data)
-
-      // Get public URL
-      const { data: urlData } = supabase
+      // Get the public URL
+      const { data: { publicUrl } } = supabase
         .storage
         .from('blog-images')
         .getPublicUrl(`posts/${fileName}`)
 
-      if (!urlData.publicUrl) {
-        console.error('URL error: Public URL not found')
-        throw new Error('Failed to get public URL for uploaded image')
+      // Insert markdown image at cursor position
+      const imageMarkdown = `![${file.name}](${publicUrl})`
+      const textarea = document.querySelector('textarea.w-md-editor-text-input') as HTMLTextAreaElement
+      if (textarea) {
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const text = content
+        const newText = text.substring(0, start) + imageMarkdown + text.substring(end)
+        setContent(newText)
+        
+        // Set cursor position after the inserted markdown
+        setTimeout(() => {
+          textarea.focus()
+          textarea.setSelectionRange(start + imageMarkdown.length, start + imageMarkdown.length)
+        }, 0)
       }
-
-      console.log('Public URL:', urlData.publicUrl)
-
-      // Insert image markdown at cursor position
-      const imageMarkdown = `![${file.name}](${urlData.publicUrl})`
-      const textarea = document.querySelector('textarea')
-      const cursorPos = textarea?.selectionStart || 0
-      const textBefore = content.substring(0, cursorPos)
-      const textAfter = content.substring(cursorPos)
-      setContent(`${textBefore}${imageMarkdown}${textAfter}`)
-
     } catch (err: any) {
-      console.error('Error uploading image:', {
-        message: err.message,
-        details: err.details,
-        code: err.code,
-        stack: err.stack
-      })
-      setError(`Failed to upload image: ${err.message}`)
+      console.error('Error uploading image:', err)
+      setError(err.message || 'Failed to upload image')
     } finally {
       setIsUploading(false)
     }
@@ -335,6 +345,30 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                         {children}
                       </code>
                     )
+                  },
+                  table({node, className, children, ...props}: any) {
+                    return (
+                      <div className="overflow-x-auto">
+                        <table className="border-collapse w-full" {...props}>
+                          {children}
+                        </table>
+                      </div>
+                    )
+                  },
+                  thead({node, children, ...props}: any) {
+                    return <thead className="bg-muted/30" {...props}>{children}</thead>
+                  },
+                  tbody({node, children, ...props}: any) {
+                    return <tbody {...props}>{children}</tbody>
+                  },
+                  tr({node, children, ...props}: any) {
+                    return <tr className="border-b border-muted" {...props}>{children}</tr>
+                  },
+                  th({node, children, ...props}: any) {
+                    return <th className="py-2 px-4 text-left font-semibold" {...props}>{children}</th>
+                  },
+                  td({node, children, ...props}: any) {
+                    return <td className="py-2 px-4" {...props}>{children}</td>
                   }
                 }}
               >
@@ -350,6 +384,20 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                   preview="edit"
                   height={500}
                   className="bg-transparent border-none"
+                  previewOptions={{
+                    remarkPlugins: [remarkGfm],
+                    components: {
+                      table: (props) => (
+                        <div className="overflow-x-auto my-4">
+                          <table className="border-collapse w-full" {...props} />
+                        </div>
+                      ),
+                      thead: (props) => <thead className="bg-muted/30" {...props} />,
+                      tr: (props) => <tr className="border-b border-muted" {...props} />,
+                      th: (props) => <th className="py-2 px-4 text-left font-semibold" {...props} />,
+                      td: (props) => <td className="py-2 px-4" {...props} />
+                    }
+                  }}
                 />
                 
                 <div className="absolute bottom-4 right-4 flex gap-2">

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react';
-import { Wand2, BookOpen, Loader2 } from 'lucide-react';
+import { Wand2, BookOpen, Loader2, Search } from 'lucide-react';
 import { BlurBackground } from './ui/blur-background';
-import { fixGrammar, generateArticle } from '@/lib/deepseek';
+import { fixGrammar, generateArticle, optimizeForSEO } from '@/lib/deepseek';
 import { researchTopic } from '@/lib/research';
 
 interface AIToolsProps {
@@ -13,6 +13,7 @@ interface AIToolsProps {
 
 export function AITools({ content, onUpdate }: AIToolsProps) {
   const [isFixingGrammar, setIsFixingGrammar] = useState(false);
+  const [isOptimizingSEO, setIsOptimizingSEO] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [researchStatus, setResearchStatus] = useState<'idle' | 'researching' | 'writing'>('idle');
   const [showResearchPrompt, setShowResearchPrompt] = useState(false);
@@ -23,13 +24,32 @@ export function AITools({ content, onUpdate }: AIToolsProps) {
     
     try {
       setIsFixingGrammar(true);
-      const fixedContent = await fixGrammar(content);
-      onUpdate(fixedContent);
+      const improvedContent = await fixGrammar(content);
+      onUpdate(improvedContent);
     } catch (error) {
       console.error('Error fixing grammar:', error);
       alert('Failed to fix grammar. Please try again.');
     } finally {
       setIsFixingGrammar(false);
+    }
+  };
+
+  const handleSEOOptimize = async () => {
+    if (!content.trim()) return;
+    
+    try {
+      setIsOptimizingSEO(true);
+      
+      // Use streaming to update content in real-time
+      await optimizeForSEO(content, (partialContent) => {
+        onUpdate(partialContent);
+      });
+      
+    } catch (error) {
+      console.error('Error optimizing for SEO:', error);
+      alert('Failed to optimize for SEO. Please try again.');
+    } finally {
+      setIsOptimizingSEO(false);
     }
   };
 
@@ -73,6 +93,19 @@ export function AITools({ content, onUpdate }: AIToolsProps) {
             <Wand2 className="w-4 h-4" />
           )}
           Fix Grammar
+        </button>
+
+        <button
+          onClick={handleSEOOptimize}
+          disabled={isOptimizingSEO || !content.trim()}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-primary/10 text-primary hover:bg-primary/20 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isOptimizingSEO ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Search className="w-4 h-4" />
+          )}
+          SEO Optimize
         </button>
 
         <button

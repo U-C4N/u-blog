@@ -99,6 +99,38 @@ const config: Config = {
               borderRadius: '0.25rem',
               fontSize: '0.875em',
             },
+            table: {
+              width: '100%',
+              borderCollapse: 'collapse',
+              tableLayout: 'auto',
+              marginTop: '2em',
+              marginBottom: '2em',
+              fontSize: '0.875em',
+            },
+            thead: {
+              borderBottomWidth: '1px',
+              borderBottomColor: 'hsl(var(--border))',
+              backgroundColor: 'hsl(var(--muted) / 0.3)',
+            },
+            th: {
+              padding: '0.75rem',
+              textAlign: 'left',
+              fontWeight: '600',
+              color: 'hsl(var(--foreground))',
+            },
+            tbody: {
+              tr: {
+                borderBottomWidth: '1px',
+                borderBottomColor: 'hsl(var(--border))',
+                '&:last-child': {
+                  borderBottomWidth: '0',
+                },
+              },
+            },
+            td: {
+              padding: '0.75rem',
+              verticalAlign: 'top',
+            },
           },
         },
       },

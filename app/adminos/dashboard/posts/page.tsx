@@ -113,7 +113,11 @@ export default function PostsPage() {
               key={post.id}
               className="grid grid-cols-[1fr,100px,100px,100px] gap-4 p-4 border-b last:border-0 items-center text-sm"
             >
-              <div className="font-medium">{post.title}</div>
+              <div className="font-medium">
+                <Link href={`/blog/${post.slug}`} className="hover:underline">
+                  {post.title}
+                </Link>
+              </div>
               <div>
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
                   post.published 

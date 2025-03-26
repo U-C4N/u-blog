@@ -17,6 +17,8 @@ A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeSc
 - 🎨 Syntax highlighting for code blocks
 - 📸 Image upload with drag & drop
 - 🔄 Auto-save and unsaved changes detection
+- 📊 Rich markdown tables with proper styling
+- 🔍 One-click SEO optimization
 
 ### Admin Dashboard
 - 📊 Post management
@@ -29,6 +31,13 @@ A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeSc
 - 🔐 CSRF protection
 - 🧪 Input sanitization
 - 🚦 Rate limiting
+
+## 🆕 Latest Updates
+
+- ✅ **Enhanced SEO Button**: One-click content optimization with improved support for Turkish language
+- 📊 **Fixed Markdown Tables**: Proper rendering of complex markdown tables with responsive design
+- 🖼️ **Improved Image Upload**: Fixed image upload issues and enhanced user experience
+- 🌐 **Multilingual Support**: Better handling of special characters and non-Latin scripts
 
 ## 🛠️ Tech Stack
 
