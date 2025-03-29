@@ -4,6 +4,8 @@ import { ArrowLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { supabase, type Post } from '@/lib/supabase/config'
+import { env } from '@/env.mjs'
+import { SocialShare } from '@/components/social-share'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,9 +36,46 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('slug', resolvedParams.slug)
     .single()
 
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+      description: 'The requested blog post could not be found.',
+    }
+  }
+
+  // Extract a plain text excerpt from the markdown content
+  const excerpt = post.content
+    .replace(/\#+\s/g, '') // Remove markdown headings
+    .replace(/\*\*|\*|\_\_|\_|\~\~|\`/g, '') // Remove bold, italic, strikethrough, code
+    .replace(/\!\[.*?\]\(.*?\)/g, '') // Remove images
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // Replace links with just their text
+    .replace(/\n/g, ' ') // Replace newlines with spaces
+    .slice(0, 200) // Take first 200 chars
+    .trim() + '...' // Add ellipsis
+
   return {
-    title: post?.title || 'Blog Post',
-    description: post?.content?.slice(0, 160) || 'Read this interesting blog post',
+    title: post.title,
+    description: excerpt,
+    keywords: post.tags || ['blog', 'article', 'technology'],
+    authors: [{ name: 'Umutcan Edizaslan' }],
+    openGraph: {
+      type: 'article',
+      url: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+      title: post.title,
+      description: excerpt,
+      publishedTime: post.created_at,
+      modifiedTime: post.updated_at || post.created_at,
+      authors: ['Umutcan Edizaslan'],
+      tags: post.tags || ['blog', 'article', 'technology'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: excerpt,
+    },
+    alternates: {
+      canonical: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+    }
   }
 }
 
@@ -53,6 +92,28 @@ async function getPost(slug: string): Promise<Post | null> {
   }
 
   return data
+}
+
+// Generate structured data for blog post
+function generateBlogStructuredData(post: Post, wordCount: number, readingTime: number) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.content.slice(0, 200).replace(/\n/g, ' ').trim() + '...',
+    author: {
+      '@type': 'Person',
+      name: 'Umutcan Edizaslan',
+    },
+    datePublished: post.created_at,
+    dateModified: post.updated_at || post.created_at,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+    },
+    wordCount: wordCount,
+    timeRequired: `PT${readingTime}M`,
+  }
 }
 
 export default async function Page({ params }: Props) {
@@ -80,53 +141,65 @@ export default async function Page({ params }: Props) {
 
   const wordCount = post.content.trim().split(/\s+/).length
   const readingTime = Math.ceil(wordCount / 200)
+  const structuredData = generateBlogStructuredData(post, wordCount, readingTime)
 
   return (
-    <div className="max-w-[1000px] mx-auto px-6 py-16">
-      <article className="max-w-[700px] mx-auto">
-        <Link 
-          href="/blog" 
-          className="inline-flex items-center gap-2 text-[15px] text-muted-foreground hover:text-foreground transition-colors mb-12"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Writing
-        </Link>
-
-        <h1 className="text-[40px] font-bold leading-tight mb-4">
-          {post.title}
-        </h1>
-
-        <div className="flex items-center gap-2 text-[15px] text-muted-foreground mb-12">
-          <time>{new Date(post.created_at).toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric'
-          })}</time>
-          <span>•</span>
-          <span>{wordCount} words</span>
-          <span>•</span>
-          <span>{readingTime} min read</span>
-        </div>
-
-        <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
-          <ReactMarkdown 
-            remarkPlugins={[remarkGfm]}
-            components={{
-              table: props => (
-                <div className="overflow-x-auto my-8">
-                  <table className="border-collapse w-full" {...props} />
-                </div>
-              ),
-              thead: props => <thead className="bg-muted/30" {...props} />,
-              tr: props => <tr className="border-b border-muted" {...props} />,
-              th: props => <th className="py-2 px-4 text-left font-semibold" {...props} />,
-              td: props => <td className="py-2 px-4" {...props} />
-            }}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <div className="max-w-[1000px] mx-auto px-6 py-16">
+        <article className="max-w-[700px] mx-auto">
+          <Link 
+            href="/blog" 
+            className="inline-flex items-center gap-2 text-[15px] text-muted-foreground hover:text-foreground transition-colors mb-12"
           >
-            {post.content}
-          </ReactMarkdown>
-        </div>
-      </article>
-    </div>
+            <ArrowLeft className="w-4 h-4" />
+            Writing
+          </Link>
+
+          <h1 className="text-[40px] font-bold leading-tight mb-4">
+            {post.title}
+          </h1>
+
+          <div className="flex items-center gap-2 text-[15px] text-muted-foreground mb-12">
+            <time dateTime={post.created_at}>{new Date(post.created_at).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            })}</time>
+            <span>•</span>
+            <span>{wordCount} words</span>
+            <span>•</span>
+            <span>{readingTime} min read</span>
+            <span>•</span>
+            <SocialShare 
+              title={post.title}
+              url={`${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`}
+            />
+          </div>
+
+          <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                table: props => (
+                  <div className="overflow-x-auto my-8">
+                    <table className="border-collapse w-full" {...props} />
+                  </div>
+                ),
+                thead: props => <thead className="bg-muted/30" {...props} />,
+                tr: props => <tr className="border-b border-muted" {...props} />,
+                th: props => <th className="py-2 px-4 text-left font-semibold" {...props} />,
+                td: props => <td className="py-2 px-4" {...props} />
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
+          </div>
+        </article>
+      </div>
+    </>
   )
 }
