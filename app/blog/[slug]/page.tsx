@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { supabase, type Post } from '@/lib/supabase/config'
 import { env } from '@/env.mjs'
 import { SocialShare } from '@/components/social-share'
@@ -183,6 +184,7 @@ export default async function Page({ params }: Props) {
           <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
             <ReactMarkdown 
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
               components={{
                 table: props => (
                   <div className="overflow-x-auto my-8">
@@ -192,7 +194,17 @@ export default async function Page({ params }: Props) {
                 thead: props => <thead className="bg-muted/30" {...props} />,
                 tr: props => <tr className="border-b border-muted" {...props} />,
                 th: props => <th className="py-2 px-4 text-left font-semibold" {...props} />,
-                td: props => <td className="py-2 px-4" {...props} />
+                td: props => <td className="py-2 px-4" {...props} />,
+                audio: props => (
+                  <div className="my-4">
+                    <audio
+                      controls
+                      className="w-full"
+                      src={props.src}
+                      {...props}
+                    />
+                  </div>
+                )
               }}
             >
               {post.content}

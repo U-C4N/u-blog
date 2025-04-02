@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/config'
 import { AITools } from '@/components/ai-tools'
@@ -14,6 +14,8 @@ export default function NewPostPage() {
   const [isPublished, setIsPublished] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isAudioUploading, setIsAudioUploading] = useState(false)
 
   const stats = {
     words: content.trim().split(/\s+/).length,
@@ -53,6 +55,144 @@ export default function NewPostPage() {
       setIsSaving(false)
     }
   }
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file) return
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      setError('Image size should be less than 5MB')
+      return
+    }
+
+    setIsUploading(true)
+    setError(null)
+
+    try {
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase
+        .storage
+        .from('blog-images')
+        .upload(`posts/${fileName}`, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Upload error:', error)
+        throw error
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('blog-images')
+        .getPublicUrl(`posts/${fileName}`)
+
+      // Insert markdown image at cursor position
+      const imageMarkdown = `![${file.name}](${publicUrl})`
+      const textarea = document.getElementById('content') as HTMLTextAreaElement
+      if (textarea) {
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const text = content
+        const newText = text.substring(0, start) + imageMarkdown + text.substring(end)
+        setContent(newText)
+        
+        // Set cursor position after the inserted markdown
+        setTimeout(() => {
+          textarea.focus()
+          textarea.setSelectionRange(start + imageMarkdown.length, start + imageMarkdown.length)
+        }, 0)
+      }
+    } catch (err: any) {
+      console.error('Error uploading image:', err)
+      setError(err.message || 'Failed to upload image')
+    } finally {
+      setIsUploading(false)
+    }
+  }, [content]);
+
+  const handleAudioUpload = useCallback(async (file: File) => {
+    if (!file) return
+    
+    // Validate file type
+    const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid audio file (MP3, WAV, or OGG)')
+      return
+    }
+
+    // Validate file size (max 20MB)
+    const maxSize = 20 * 1024 * 1024 // 20MB
+    if (file.size > maxSize) {
+      setError('Audio size should be less than 20MB')
+      return
+    }
+
+    setIsAudioUploading(true)
+    setError(null)
+
+    try {
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop()
+      const fileName = `audio-${Math.random().toString(36).substring(2)}.${fileExt}`
+      
+      // Upload to Supabase Storage - using blog-images bucket
+      const { data, error } = await supabase
+        .storage
+        .from('blog-images')  // Using existing images bucket instead of blog-audio
+        .upload(`audio/${fileName}`, file, {  // Put in audio subfolder 
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Upload error (detailed):', JSON.stringify(error))
+        throw error
+      }
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('blog-images')  // Using existing images bucket
+        .getPublicUrl(`audio/${fileName}`)
+
+      // Insert audio player markdown at cursor position
+      const audioMarkdown = `<audio controls src="${publicUrl}"></audio>`
+      const textarea = document.getElementById('content') as HTMLTextAreaElement
+      if (textarea) {
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const text = content
+        const newText = text.substring(0, start) + audioMarkdown + text.substring(end)
+        setContent(newText)
+        
+        // Set cursor position after the inserted markdown
+        setTimeout(() => {
+          textarea.focus()
+          textarea.setSelectionRange(start + audioMarkdown.length, start + audioMarkdown.length)
+        }, 0)
+      }
+    } catch (err: any) {
+      console.error('Error uploading audio (raw error object):', err)
+      setError(err.message || `Failed to upload audio: ${JSON.stringify(err)}`)
+    } finally {
+      setIsAudioUploading(false)
+    }
+  }, [content]);
 
   return (
     <main className="max-w-[1000px] mx-auto px-6 py-16">
@@ -94,7 +234,59 @@ export default function NewPostPage() {
             <label htmlFor="content" className="block text-sm font-medium text-muted-foreground mb-2">
               Content (Markdown)
             </label>
-            <AITools content={content} onUpdate={setContent} />
+            <div className="flex items-center gap-2 mb-2">
+              <AITools content={content} onUpdate={setContent} />
+              
+              <div className="relative">
+                <input
+                  type="file"
+                  id="image-upload"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+                <label
+                  htmlFor="image-upload"
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-4 h-4" />
+                  )}
+                  {isUploading ? 'Uploading...' : 'Add Image'}
+                </label>
+              </div>
+              
+              <div className="relative">
+                <input
+                  type="file"
+                  id="audio-upload"
+                  accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleAudioUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+                <label
+                  htmlFor="audio-upload"
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isAudioUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {isAudioUploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Music className="w-4 h-4" />
+                  )}
+                  {isAudioUploading ? 'Uploading...' : 'Add Audio'}
+                </label>
+              </div>
+            </div>
             <div className="relative">
               <textarea
                 id="content"
