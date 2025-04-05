@@ -72,7 +72,7 @@ export default function DashboardPage() {
 
         <Section title="Analytics">
           <ProjectLink
-            href="#"
+            href="/adminos/dashboard/statistics"
             title="Statistics"
             description="View website traffic and engagement"
             icon={<BarChart2 className="w-5 h-5" />}
