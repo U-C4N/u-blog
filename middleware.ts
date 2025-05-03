@@ -1,10 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Define CookieOptions manually since it's not exported from the package
+// Basic cookie options type for type safety
 type CookieOptions = {
-  name?: string
-  value?: string
   domain?: string
   path?: string
   maxAge?: number
@@ -26,44 +24,34 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        parse: () => {
+          const cookies: Record<string, string> = {}
+          request.cookies.getAll().forEach(cookie => {
+            cookies[cookie.name] = cookie.value
+          })
+          return cookies
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+        getAll: () => request.cookies.getAll().map(cookie => ({
+          name: cookie.name,
+          value: cookie.value
+        })),
+        set: (name: string, value: string, options: CookieOptions) => {
+          // Set in the response
           response.cookies.set({
             name,
             value,
-            ...options,
+            ...options
           })
         },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+        remove: (name: string, options: CookieOptions) => {
+          // Remove in the response
           response.cookies.set({
             name,
             value: '',
-            ...options,
+            ...options
           })
-        },
-      },
+        }
+      }
     }
   )
 
