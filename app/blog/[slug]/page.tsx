@@ -7,6 +7,8 @@ import rehypeRaw from 'rehype-raw'
 import { supabase, type Post } from '@/lib/supabase/config'
 import { env } from '@/env.mjs'
 import { SocialShare } from '@/components/social-share'
+import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
+import { RelatedPosts } from '@/components/related-posts'
 
 export const dynamic = 'force-dynamic'
 
@@ -144,6 +146,12 @@ export default async function Page({ params }: Props) {
   const readingTime = Math.ceil(wordCount / 200)
   const structuredData = generateBlogStructuredData(post, wordCount, readingTime)
 
+  // Breadcrumb items for this post
+  const breadcrumbItems = [
+    { label: 'Blog', href: '/blog' },
+    { label: post.title, href: `/blog/${post.slug}`, active: true }
+  ]
+
   return (
     <>
       <script
@@ -152,6 +160,10 @@ export default async function Page({ params }: Props) {
       />
       <div className="max-w-[1000px] mx-auto px-6 py-16">
         <article className="max-w-[700px] mx-auto">
+          <div className="mb-8">
+            <SEOBreadcrumb items={breadcrumbItems} />
+          </div>
+
           <Link 
             href="/blog" 
             className="inline-flex items-center gap-2 text-[15px] text-muted-foreground hover:text-foreground transition-colors mb-12"
@@ -209,6 +221,17 @@ export default async function Page({ params }: Props) {
             >
               {post.content}
             </ReactMarkdown>
+          </div>
+          
+          {/* Related Posts */}
+          <div className="mt-16 pt-8 border-t border-border">
+            {post.tags && post.tags.length > 0 && (
+              <RelatedPosts 
+                currentPostId={post.id}
+                currentPostTags={post.tags}
+                className="mb-12"
+              />
+            )}
           </div>
         </article>
       </div>

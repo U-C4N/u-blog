@@ -1,0 +1,10 @@
+# U-BLOG Robots.txt
+User-agent: *
+Allow: /
+
+# Disallow admin areas
+Disallow: /adminos/login/
+Disallow: /adminos/dashboard/
+
+# Sitemap location
+Sitemap: https://uc4n.com/sitemap.xml 

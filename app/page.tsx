@@ -118,28 +118,6 @@ export default async function Home() {
           </div>
         </header>
 
-        <section className="mb-16 py-10 border-y">
-          <h3 className="text-[17px] font-medium mb-6">Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="/adminos/dashboard" className="block p-4 bg-card rounded-lg border hover:shadow-md transition-all duration-300 hover:scale-105 hover:border-primary/30 cursor-pointer">
-              <p className="text-3xl font-semibold mb-1">5+</p>
-              <p className="text-sm text-muted-foreground">Years Experience</p>
-            </a>
-            <a href="/adminos/dashboard" className="block p-4 bg-card rounded-lg border hover:shadow-md transition-all duration-300 hover:scale-105 hover:border-primary/30 cursor-pointer">
-              <p className="text-3xl font-semibold mb-1">25+</p>
-              <p className="text-sm text-muted-foreground">Projects Completed</p>
-            </a>
-            <a href="/adminos/dashboard" className="block p-4 bg-card rounded-lg border hover:shadow-md transition-all duration-300 hover:scale-105 hover:border-primary/30 cursor-pointer">
-              <p className="text-3xl font-semibold mb-1">10+</p>
-              <p className="text-sm text-muted-foreground">Open Source Repos</p>
-            </a>
-            <a href="/adminos/dashboard" className="block p-4 bg-card rounded-lg border hover:shadow-md transition-all duration-300 hover:scale-105 hover:border-primary/30 cursor-pointer">
-              <p className="text-3xl font-semibold mb-1">3</p>
-              <p className="text-sm text-muted-foreground">Design Awards</p>
-            </a>
-          </div>
-        </section>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
           <Section title="Portfolio">
             {buildings.map((building) => (
