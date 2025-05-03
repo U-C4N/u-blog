@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Add custom type for Supabase cookie methods
 interface CookieMethods {
   get(name: string): string | undefined
+  getAll(): { name: string; value: string }[]
   set(name: string, value: string, options?: {
     domain?: string
     path?: string
@@ -35,6 +36,12 @@ export async function middleware(request: NextRequest) {
   const cookieHandler: CookieMethods = {
     get(name: string) {
       return request.cookies.get(name)?.value
+    },
+    getAll() {
+      return request.cookies.getAll().map(cookie => ({
+        name: cookie.name,
+        value: cookie.value
+      }))
     },
     set(name: string, value: string, options = {}) {
       response.cookies.set({
