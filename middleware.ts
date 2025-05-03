@@ -1,5 +1,18 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
+// Define CookieOptions manually since it's not exported from the package
+type CookieOptions = {
+  name?: string
+  value?: string
+  domain?: string
+  path?: string
+  maxAge?: number
+  expires?: Date
+  httpOnly?: boolean
+  secure?: boolean
+  sameSite?: 'strict' | 'lax' | 'none'
+}
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({

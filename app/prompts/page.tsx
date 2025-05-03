@@ -35,7 +35,7 @@ export default function PromptsPage() {
     }
 
     fetchPrompts();
-  }, []);
+  }, [supabase]);
 
   const handleCopyPrompt = async (prompt: Prompt) => {
     try {

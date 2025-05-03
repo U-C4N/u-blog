@@ -101,6 +101,8 @@ export type Post = {
   published: boolean
   created_at: string
   updated_at: string
+  tags?: string[]
+  views?: number
 }
 
 export type Project = {

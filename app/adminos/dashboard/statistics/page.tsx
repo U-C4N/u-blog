@@ -35,23 +35,23 @@ export default function StatisticsPage() {
     if (!isAuthenticated) {
       router.push('/adminos/login')
     } else {
+      const fetchAllStats = async () => {
+        setIsLoading(true)
+        try {
+          await Promise.all([
+            fetchSiteStats(),
+            fetchBlogStats()
+          ])
+        } catch (error) {
+          console.error('Error fetching stats:', error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
       fetchAllStats()
     }
   }, [router])
-
-  const fetchAllStats = async () => {
-    setIsLoading(true)
-    try {
-      await Promise.all([
-        fetchSiteStats(),
-        fetchBlogStats()
-      ])
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const fetchSiteStats = async () => {
     try {
