@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Code2, LogOut, PenSquare, User, BarChart2, Gauge, MessageSquare } from 'lucide-react'
+import { Code2, LogOut, PenSquare, User, MessageSquare } from 'lucide-react'
 import { Section } from '@/components/section'
 import { ProjectLink } from '@/components/project-link'
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+      <div className="grid grid-cols-1 gap-16">
         <Section title="Content">
           <ProjectLink
             href="/adminos/dashboard/posts"
@@ -67,21 +67,6 @@ export default function DashboardPage() {
             title="Profile"
             description="Update your personal information"
             icon={<User className="w-5 h-5" />}
-          />
-        </Section>
-
-        <Section title="Analytics">
-          <ProjectLink
-            href="/adminos/dashboard/statistics"
-            title="Statistics"
-            description="View website traffic and engagement"
-            icon={<BarChart2 className="w-5 h-5" />}
-          />
-          <ProjectLink
-            href="#"
-            title="Performance"
-            description="Monitor website performance metrics"
-            icon={<Gauge className="w-5 h-5" />}
           />
         </Section>
       </div>

@@ -9,6 +9,10 @@ import { AITools } from '@/components/ai-tools'
 import DOMPurify from 'dompurify'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw' // Added import for rehypeRaw
+import 'katex/dist/katex.min.css' // KaTeX CSS
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import dynamic from 'next/dynamic'
@@ -399,50 +403,13 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
 
           {isPreview ? (
             <div className="prose prose-lg dark:prose-invert max-w-none">
+              <link
+                rel="stylesheet"
+                href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css"
+              />
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code({node, inline, className, children, ...props}: any) {
-                    const match = /language-(\w+)/.exec(className || '')
-                    return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={vscDarkPlus}
-                        language={match[1]}
-                        PreTag="div"
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code {...props} className={className}>
-                        {children}
-                      </code>
-                    )
-                  },
-                  table({node, className, children, ...props}: any) {
-                    return (
-                      <div className="overflow-x-auto">
-                        <table className="border-collapse w-full" {...props}>
-                          {children}
-                        </table>
-                      </div>
-                    )
-                  },
-                  thead({node, children, ...props}: any) {
-                    return <thead className="bg-muted/30" {...props}>{children}</thead>
-                  },
-                  tbody({node, children, ...props}: any) {
-                    return <tbody {...props}>{children}</tbody>
-                  },
-                  tr({node, children, ...props}: any) {
-                    return <tr className="border-b border-muted" {...props}>{children}</tr>
-                  },
-                  th({node, children, ...props}: any) {
-                    return <th className="py-2 px-4 text-left font-semibold" {...props}>{children}</th>
-                  },
-                  td({node, children, ...props}: any) {
-                    return <td className="py-2 px-4" {...props}>{children}</td>
-                  }
-                }}
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeRaw, rehypeKatex]}
               >
                 {content}
               </ReactMarkdown>
@@ -457,7 +424,8 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                   height={500}
                   className="bg-transparent border-none"
                   previewOptions={{
-                    remarkPlugins: [remarkGfm],
+                    remarkPlugins: [remarkGfm, remarkMath],
+                    rehypePlugins: [rehypeRaw, rehypeKatex],
                     components: {
                       table: (props) => (
                         <div className="overflow-x-auto my-4">

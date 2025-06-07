@@ -4,6 +4,9 @@ import { ArrowLeft } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css' // KaTeX CSS
 import { supabase, type Post } from '@/lib/supabase/config'
 import { env } from '@/env.mjs'
 import { SocialShare } from '@/components/social-share'
@@ -195,8 +198,8 @@ export default async function Page({ params }: Props) {
 
           <div className="prose prose-lg prose-neutral dark:prose-invert max-w-none">
             <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeRaw, rehypeKatex]}
               components={{
                 table: props => (
                   <div className="overflow-x-auto my-8">

@@ -34,6 +34,10 @@ A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeSc
 
 ## 🆕 Latest Updates
 
+### June 7, 2025 - LaTeX Mathematical Formula Support
+- ➕ **Mathematical Formula Rendering**: Added support for rendering LaTeX mathematical formulas in blog posts and the editor preview.
+- 📚 **Libraries Used**: Implemented using `remark-math` and `rehype-katex` for robust and accurate formula display.
+
 ### May 3, 2025 - Major SEO Enhancement
 - 🔍 **Comprehensive SEO Upgrade**: Improved SEO score from 58 to 85/100
 - 🤖 **Technical SEO**: Added robots.txt and sitemap.xml
