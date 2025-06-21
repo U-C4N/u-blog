@@ -89,6 +89,14 @@ export type Profile = {
   }
   github_token?: string
   github_username?: string
+  meta_description?: string
+  meta_keywords?: string[]
+  og_image_url?: string
+  twitter_card_type?: string
+  website_url?: string
+  location?: string
+  company?: string
+  job_title?: string
   created_at?: string
   updated_at?: string
 }

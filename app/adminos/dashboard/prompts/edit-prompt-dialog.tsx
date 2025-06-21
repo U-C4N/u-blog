@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Pencil, AlertCircle } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -59,43 +64,64 @@ export default function EditPromptDialog({ prompt }: EditPromptDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="hover:bg-gray-100">
+        <Button variant="ghost" size="icon" className="h-8 w-8">
           <Pencil className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Prompt</DialogTitle>
+          <DialogDescription>
+            Make changes to your AI prompt. Update the title and content as needed.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-50 rounded-md">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-          <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
-            <input
-              type="text"
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Title</Label>
+            <Input
+              id="edit-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border rounded-md"
+              placeholder="e.g., Code Review Assistant"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Content</label>
-            <textarea
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-content">Prompt Content</Label>
+            <Textarea
+              id="edit-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full p-2 border rounded-md h-32"
+              placeholder="Enter your AI prompt here. Be specific and clear about what you want the AI to do..."
+              className="min-h-[200px] resize-none"
               required
             />
+            <p className="text-xs text-muted-foreground">
+              {content.length} characters
+            </p>
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
+          
+          <div className="flex justify-end gap-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -15,12 +26,11 @@ interface DeletePromptButtonProps {
 
 export default function DeletePromptButton({ promptId }: DeletePromptButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this prompt?")) return;
-    
     setIsLoading(true);
     try {
       const { error } = await supabase
@@ -29,6 +39,8 @@ export default function DeletePromptButton({ promptId }: DeletePromptButtonProps
         .eq("id", promptId);
 
       if (error) throw error;
+      
+      setIsOpen(false);
       router.refresh();
     } catch (error) {
       console.error("Error deleting prompt:", error);
@@ -38,14 +50,34 @@ export default function DeletePromptButton({ promptId }: DeletePromptButtonProps
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="text-red-500 hover:text-red-600 hover:bg-red-50"
-      onClick={handleDelete}
-      disabled={isLoading}
-    >
-      <Trash2 className="w-4 h-4" />
-    </Button>
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Prompt</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this prompt? This action cannot be undone and the prompt will be permanently removed from your collection.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isLoading ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 } 
