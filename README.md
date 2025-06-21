@@ -34,6 +34,10 @@ A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeSc
 
 ## 🆕 Latest Updates
 
+### June 21, 2025 - ✨ Admin Panel Reimagined & SEO Supercharged
+- ✨ **Enhanced Admin Panel**: The admin panel UI has been completely redesigned for a more intuitive and streamlined user experience.
+- ⚙️ **Advanced SEO & Meta Settings**: You can now fine-tune your site's SEO with dedicated meta title, description, and keyword settings for each profile.
+
 ### June 7, 2025 - LaTeX Mathematical Formula Support
 - ➕ **Mathematical Formula Rendering**: Added support for rendering LaTeX mathematical formulas in blog posts and the editor preview.
 - 📚 **Libraries Used**: Implemented using `remark-math` and `rehype-katex` for robust and accurate formula display.

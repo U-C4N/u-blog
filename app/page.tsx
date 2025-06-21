@@ -1,25 +1,46 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { Code2, Twitter, Linkedin, Github, Copy, Check } from 'lucide-react'
+import Image from 'next/image'
+import { Code2, Twitter, Linkedin, Github, Copy, Check, ExternalLink, Star } from 'lucide-react'
 import { ProjectLink } from '@/components/project-link'
 import { Section } from '@/components/section'
 import { supabase, type Profile, type Building, type GithubRepo, type Prompt } from '@/lib/supabase/config'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { env } from '@/env.mjs'
+import CopyButton from '@/components/copy-button'
 
-// Metadata for the homepage
-export const metadata: Metadata = {
-  openGraph: {
-    type: 'website',
-    url: env.NEXT_PUBLIC_SITE_URL,
-    title: 'U-BLOG | Umutcan Edizaslan',
-    description: 'Software Engineer and AI Master\'s Student. Personal website and blog.',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'U-BLOG | Umutcan Edizaslan',
-    description: 'Software Engineer and AI Master\'s Student. Personal website and blog.',
-  },
+// Dynamic metadata generation
+export async function generateMetadata(): Promise<Metadata> {
+  // Fetch profile data for metadata
+  const profileRes = await supabase.from('profiles').select('*').limit(1).maybeSingle()
+  const profile = profileRes.data || {
+    name: 'Umutcan Edizaslan',
+    subtitle: 'Software Engineer ~ AI Master\'s Student',
+    meta_description: 'Software Engineer and AI Master\'s Student. Personal website and blog.',
+    og_image_url: '',
+    twitter_card_type: 'summary_large_image'
+  }
+
+  return {
+    title: `U-BLOG | ${profile.name}`,
+    description: profile.meta_description || profile.subtitle,
+    keywords: profile.meta_keywords || [],
+    openGraph: {
+      type: 'website',
+      url: env.NEXT_PUBLIC_SITE_URL,
+      title: `U-BLOG | ${profile.name}`,
+      description: profile.meta_description || profile.subtitle,
+      images: profile.og_image_url ? [profile.og_image_url] : undefined,
+    },
+    twitter: {
+      card: (profile.twitter_card_type as any) || 'summary_large_image',
+      title: `U-BLOG | ${profile.name}`,
+      description: profile.meta_description || profile.subtitle,
+      images: profile.og_image_url ? [profile.og_image_url] : undefined,
+    },
+  }
 }
 
 // For data fetching
@@ -97,7 +118,14 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <main className="max-w-[1000px] mx-auto px-6 py-20">
-        <header className="mb-20">
+        <header className="mb-20 flow-root">
+          <Image
+            src="/hope.png"
+            alt="Umutcan Edizaslan"
+            width={140}
+            height={140}
+            className="rounded-lg float-right ml-6 mb-6"
+          />
           <div className="flex items-center gap-3 mb-3">
             <h1 className="text-[24px] font-medium tracking-tight">{profile.name}</h1>
             <span className="text-[24px] text-muted-foreground">~</span>
@@ -106,8 +134,7 @@ export default async function Home() {
               <Code2 className="w-5 h-5 text-muted-foreground" />
             </div>
           </div>
-          <h2 className="text-[20px] text-muted-foreground mb-10 font-normal">{profile.subtitle}</h2>
-          
+          <h2 className="text-[20px] text-muted-foreground font-normal mb-10">{profile.subtitle}</h2>
           <div className="space-y-5">
             <h3 className="text-[18px] font-medium">Present</h3>
             {profile.present_text.slice(0, 3).map((text: string, index: number) => (
@@ -133,16 +160,45 @@ export default async function Home() {
           </Section>
 
           <Section title="Open Source">
-            {selectedRepos.map((repo) => (
-              <div key={repo.id} className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
-                <ProjectLink
-                  href={repo.repo_url}
-                  title={repo.repo_name}
-                  description={truncateDescription(repo.description || '')}
-                  external
-                />
-              </div>
-            ))}
+            <div className="space-y-6">
+              {selectedRepos.map((repo, index) => (
+                <div key={repo.id} className="group relative">
+                  {/* Timeline Line - Sade çizgi */}
+                  <div className="absolute left-2 top-0 bottom-0 w-px bg-border"></div>
+                  
+                  {/* Timeline Dot - Siyah nokta */}
+                  <div className="absolute left-[6px] top-4 w-2 h-2 bg-foreground rounded-full border-2 border-background shadow-sm z-10"></div>
+                  
+                  {/* Content */}
+                  <div className="ml-8">
+                    <Card className="border-0 shadow-none bg-transparent p-0">
+                      <CardContent className="p-0">
+                        <Link 
+                          href={repo.repo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block group/card hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-foreground group-hover/card:text-foreground/80 transition-colors">
+                                {repo.repo_name}
+                              </h4>
+                              {repo.description && (
+                                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                                  {truncateDescription(repo.description, 150)}
+                                </p>
+                              )}
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-muted-foreground group-hover/card:text-foreground transition-colors shrink-0 mt-0.5" />
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ))}
+            </div>
           </Section>
 
           <Section title="Explore">
@@ -167,16 +223,7 @@ export default async function Home() {
                 <div className="bg-muted/20 p-5 rounded-lg border border-border/40 hover:bg-muted/30 transition-colors duration-200">
                   <div className="flex justify-between items-start gap-4 mb-3">
                     <h4 className="font-medium text-sm">{prompts[0].title}</h4>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0 hover:bg-muted/50 transition-colors"
-                      type="button"
-                      id="copy-prompt-button"
-                    >
-                      <Copy className="w-4 h-4" />
-                      <span className="sr-only">Copy</span>
-                    </Button>
+                    <CopyButton content={prompts[0].content} />
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-3">
                     {prompts[0].content}
@@ -231,25 +278,7 @@ export default async function Home() {
           </Section>
         </div>
       </main>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            document.getElementById('copy-prompt-button')?.addEventListener('click', async () => {
-              try {
-                await navigator.clipboard.writeText(${JSON.stringify(prompts[0]?.content || '')});
-                const btn = document.getElementById('copy-prompt-button');
-                const originalContent = btn.innerHTML;
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="sr-only">Copied</span>';
-                setTimeout(() => {
-                  btn.innerHTML = originalContent;
-                }, 2000);
-              } catch (err) {
-                console.error('Failed to copy:', err);
-              }
-            });
-          `
-        }}
-      />
+
     </>
   )
 }
