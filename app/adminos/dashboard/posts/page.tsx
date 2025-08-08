@@ -207,6 +207,7 @@ export default function PostsPage() {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Tags</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -230,6 +231,9 @@ export default function PostsPage() {
                         >
                           {post.published ? 'Published' : 'Draft'}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {post.tags && post.tags.length > 0 ? post.tags.join(', ') : '-'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatDate(post.created_at)}

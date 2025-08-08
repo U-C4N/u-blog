@@ -18,6 +18,9 @@ const nextConfig = {
       },
     ]
   },
+  experimental: {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://yoursite.com'),
+  },
 };
 
 module.exports = nextConfig;

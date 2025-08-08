@@ -60,27 +60,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .trim() + '...' // Add ellipsis
 
   return {
-    title: post.title,
-    description: excerpt,
+    title: post.meta_title || post.title,
+    description: post.meta_description || excerpt,
     keywords: post.tags || ['blog', 'article', 'technology'],
     authors: [{ name: 'Umutcan Edizaslan' }],
+    robots: post.noindex ? { index: false, follow: true } : undefined,
     openGraph: {
       type: 'article',
       url: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
-      title: post.title,
-      description: excerpt,
+      title: post.meta_title || post.title,
+      description: post.meta_description || excerpt,
       publishedTime: post.created_at,
       modifiedTime: post.updated_at || post.created_at,
       authors: ['Umutcan Edizaslan'],
       tags: post.tags || ['blog', 'article', 'technology'],
+      images: post.og_image_url ? [post.og_image_url] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
-      description: excerpt,
+      title: post.meta_title || post.title,
+      description: post.meta_description || excerpt,
+      images: post.og_image_url ? [post.og_image_url] : undefined,
     },
     alternates: {
-      canonical: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+      canonical: post.canonical_url || `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
     }
   }
 }
@@ -189,6 +192,16 @@ export default async function Page({ params }: Props) {
             <span>{wordCount} words</span>
             <span>•</span>
             <span>{readingTime} min read</span>
+            {post.tags && post.tags.length > 0 && (
+              <>
+                <span>•</span>
+                <div className="flex flex-wrap gap-1">
+                  {post.tags.slice(0, 3).map(tag => (
+                    <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="text-muted-foreground hover:underline">#{tag}</Link>
+                  ))}
+                </div>
+              </>
+            )}
             <span>•</span>
             <SocialShare 
               title={post.title}
@@ -225,6 +238,15 @@ export default async function Page({ params }: Props) {
               {post.content}
             </ReactMarkdown>
           </div>
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-8 flex flex-wrap gap-2">
+              {post.tags.map(tag => (
+                <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="text-sm px-2 py-1 rounded bg-muted hover:bg-muted/80 transition-colors">
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+          )}
           
           {/* Related Posts */}
           <div className="mt-16 pt-8 border-t border-border">

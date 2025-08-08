@@ -19,6 +19,12 @@ create table posts (
   slug text not null unique,
   content text,
   published boolean default false,
+  tags text[] default array[]::text[],
+  meta_title text,
+  meta_description text,
+  canonical_url text,
+  og_image_url text,
+  noindex boolean default false,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

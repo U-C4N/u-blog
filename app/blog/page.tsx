@@ -113,6 +113,13 @@ export default async function BlogPage() {
                           >
                             {post.title}
                           </Link>
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex gap-2 mr-auto ml-4">
+                              {post.tags.slice(0,2).map(tag => (
+                                <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="text-xs px-2 py-0.5 rounded bg-muted hover:bg-muted/80">#{tag}</Link>
+                              ))}
+                            </div>
+                          )}
                           <time 
                             dateTime={post.created_at}
                             className="text-[15px] text-muted-foreground whitespace-nowrap"

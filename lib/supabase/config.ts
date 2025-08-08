@@ -111,6 +111,11 @@ export type Post = {
   updated_at: string
   tags?: string[]
   views?: number
+  meta_title?: string
+  meta_description?: string
+  canonical_url?: string
+  og_image_url?: string
+  noindex?: boolean
 }
 
 export type Project = {

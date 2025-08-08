@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music } from 'lucide-react'
+import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music, ImagePlus, Link as LinkIcon, EyeOff, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { getSupabaseBrowser, type Post } from '@/lib/supabase/config'
-import { AITools } from '@/components/ai-tools'
+import { getSupabaseBrowser, type Post } from '../../../../../lib/supabase/config'
 import DOMPurify from 'dompurify'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -65,6 +64,14 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   const [isPreview, setIsPreview] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isAudioUploading, setIsAudioUploading] = useState(false)
+  const [isSEOGenerating, setIsSEOGenerating] = useState(false)
+  const [canonicalTouched, setCanonicalTouched] = useState(false)
+  const [tagsInput, setTagsInput] = useState((initialPost.tags || []).join(', '))
+  const [metaTitle, setMetaTitle] = useState(initialPost.meta_title || initialPost.title)
+  const [metaDescription, setMetaDescription] = useState(initialPost.meta_description || '')
+  const [canonicalUrl, setCanonicalUrl] = useState(initialPost.canonical_url || '')
+  const [ogImageUrl, setOgImageUrl] = useState(initialPost.og_image_url || '')
+  const [noindex, setNoindex] = useState(Boolean(initialPost.noindex))
 
   // Unsaved changes kontrolü
   useEffect(() => {
@@ -84,7 +91,13 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     if (
       title !== initialPost.title ||
       content !== initialPost.content ||
-      isPublished !== initialPost.published
+      isPublished !== initialPost.published ||
+      tagsInput !== (initialPost.tags || []).join(', ') ||
+      metaTitle !== (initialPost.meta_title || initialPost.title) ||
+      metaDescription !== (initialPost.meta_description || '') ||
+      canonicalUrl !== (initialPost.canonical_url || '') ||
+      ogImageUrl !== (initialPost.og_image_url || '') ||
+      noindex !== Boolean(initialPost.noindex)
     ) {
       setIsDirty(true)
     } else {
@@ -137,9 +150,17 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
           title,
           content: sanitizedContent,
           published: isPublished,
+          tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
+          meta_title: metaTitle || title,
+          meta_description: metaDescription,
+          canonical_url: canonicalUrl,
+          og_image_url: ogImageUrl || null,
+          noindex,
           updated_at: new Date().toISOString()
         })
         .eq('id', initialPost.id)
+        .select('*')
+        .select('*')
 
       if (error) {
         console.error('Supabase error details:', error)
@@ -147,6 +168,9 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       }
 
       console.log('Update response:', data)
+      try {
+        fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${window.location.origin}/sitemap.xml`)}`)
+      } catch {}
       router.refresh()
       router.push('/adminos/dashboard/posts')
     } catch (err: any) {
@@ -173,6 +197,18 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   const handlePublishedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsPublished(e.target.checked)
   }
+
+  // Auto-canonical unless touched
+  useEffect(() => {
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+    if (!canonicalTouched) {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      setCanonicalUrl(baseUrl ? `${baseUrl}/blog/${slug}` : `/blog/${slug}`)
+    }
+  }, [title, canonicalTouched])
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!file) return
@@ -216,10 +252,11 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       }
 
       // Get the public URL
-      const { data: { publicUrl } } = supabase
+      const { data: publicData } = supabase
         .storage
         .from('blog-images')
         .getPublicUrl(`posts/${fileName}`)
+      const publicUrl = (publicData as any)?.publicUrl || publicData?.publicUrl
 
       // Insert markdown image at cursor position
       const imageMarkdown = `![${file.name}](${publicUrl})`
@@ -287,10 +324,11 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       }
 
       // Get the public URL
-      const { data: { publicUrl } } = supabase
+      const { data: publicData } = supabase
         .storage
         .from('blog-images')  // Using existing images bucket
         .getPublicUrl(`audio/${fileName}`)
+      const publicUrl = (publicData as any)?.publicUrl || publicData?.publicUrl
 
       // Insert audio player markdown at cursor position
       const audioMarkdown = `<audio controls src="${publicUrl}"></audio>`
@@ -315,6 +353,62 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       setIsAudioUploading(false)
     }
   }, [content])
+
+  const handleOgImageUpload = useCallback(async (file: File) => {
+    if (!file) return
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)')
+      return
+    }
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      setError('Image size should be less than 5MB')
+      return
+    }
+    setIsUploading(true)
+    setError(null)
+    try {
+      const supabase = getSupabaseBrowser()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `og-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const { error } = await supabase.storage.from('blog-images').upload(`og/${fileName}`, file, { cacheControl: '3600', upsert: false })
+      if (error) throw error
+      const { data: publicData } = supabase.storage.from('blog-images').getPublicUrl(`og/${fileName}`)
+      setOgImageUrl(((publicData as any)?.publicUrl || (publicData as any)?.publicUrl) as string)
+    } catch (err: any) {
+      console.error('Error uploading OG image:', err)
+      setError(err.message || 'Failed to upload OG image')
+    } finally {
+      setIsUploading(false)
+    }
+  }, [])
+
+  const handleSEOGenerate = useCallback(async () => {
+    if (!title || !content) {
+      setError('Please provide title and content before using A.C.S.I')
+      return
+    }
+    setIsSEOGenerating(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/seo-autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content }),
+      })
+      if (!res.ok) throw new Error('A.C.S.I request failed')
+      const data = await res.json()
+      if (data.metaTitle) setMetaTitle(data.metaTitle)
+      if (data.metaDescription) setMetaDescription(data.metaDescription)
+      if (Array.isArray(data.tags)) setTagsInput(data.tags.join(', '))
+      if (typeof data.noindex === 'boolean') setNoindex(data.noindex)
+    } catch (e: any) {
+      setError(e.message || 'Failed to auto-complete SEO info')
+    } finally {
+      setIsSEOGenerating(false)
+    }
+  }, [title, content])
 
   return (
     <form onSubmit={handleSubmit} className="max-w-[1000px] mx-auto px-6 py-16">
@@ -392,6 +486,12 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
               placeholder="Post title"
               className="w-full text-[40px] font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
             />
+            {title && (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <LinkIcon className="w-3 h-3" />
+                Slug: <span className="font-mono">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-[15px] text-muted-foreground">
@@ -487,15 +587,113 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                       ) : (
                         <Music className="w-4 h-4" />
                       )}
-                      {isAudioUploading ? 'Uploading...' : 'Add Audio'}
+                  {isAudioUploading ? 'Uploading...' : 'Add Audio'}
                     </label>
                   </div>
+              <button
+                type="button"
+                onClick={handleSEOGenerate}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors disabled:opacity-50"
+                disabled={isSEOGenerating}
+                title="Auto-Completer SEO Info"
+              >
+                {isSEOGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                A.C.S.I
+              </button>
                 </div>
               </div>
-
-              <AITools content={content} onUpdate={setContent} />
             </>
           )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Tags (comma-separated)</label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="ai, react, nextjs"
+              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Title</label>
+            <input
+              type="text"
+              value={metaTitle}
+              onChange={(e) => setMetaTitle(e.target.value)}
+              placeholder="Custom SEO title (optional)"
+              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Description</label>
+            <textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              rows={3}
+              placeholder="Brief summary for search engines"
+              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Canonical URL</label>
+            <input
+              type="url"
+              value={canonicalUrl}
+              onChange={(e) => { setCanonicalUrl(e.target.value); setCanonicalTouched(true) }}
+              placeholder="https://.../blog/slug"
+              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-2">Open Graph Image URL</label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={ogImageUrl}
+                onChange={(e) => setOgImageUrl(e.target.value)}
+                placeholder="https://.../image.png"
+                className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <div className="relative">
+                <input
+                  type="file"
+                  id="og-upload"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleOgImageUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+                <label
+                  htmlFor="og-upload"
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                  {isUploading ? 'Uploading...' : 'Upload'}
+                </label>
+              </div>
+            </div>
+            {ogImageUrl && (
+              <img src={ogImageUrl} alt="OG preview" className="mt-2 h-24 rounded border object-cover" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="noindex"
+              checked={noindex}
+              onChange={(e) => setNoindex(e.target.checked)}
+              className="rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="noindex" className="text-sm text-muted-foreground inline-flex items-center gap-1">
+              <EyeOff className="w-4 h-4" /> Noindex this post
+            </label>
+          </div>
         </div>
       </div>
     </form>
