@@ -30,7 +30,7 @@ TITLE:\n${title}\n\nCONTENT:\n${content.substring(0, 8000)}`
     const requestedModel = 'moonshotai/kimi-k2-instruct'
     const fallbackModel = process.env.GROQ_FALLBACK_MODEL || 'llama-3.1-70b-versatile'
 
-    async function callGroq(model: string) {
+    const callGroq = async (model: string) => {
       return fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
