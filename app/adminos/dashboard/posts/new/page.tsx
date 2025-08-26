@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2, Link as LinkIcon, ImagePlus, EyeOff, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '../../../../../lib/supabase/config'
 
 export default function NewPostPage() {
@@ -520,7 +521,7 @@ export default function NewPostPage() {
                 </div>
               </div>
               {ogImageUrl && (
-                <img src={ogImageUrl} alt="OG preview" className="mt-2 h-24 rounded border object-cover" />
+                <Image src={ogImageUrl} alt="OG preview" width={200} height={96} className="mt-2 h-24 rounded border object-cover" />
               )}
             </div>
             <div className="flex items-center gap-2">

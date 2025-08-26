@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music, ImagePlus, Link as LinkIcon, EyeOff, Sparkles, Globe, Plus } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getSupabaseBrowser, type Post } from '../../../../../lib/supabase/config'
 import DOMPurify from 'dompurify'
 import ReactMarkdown from 'react-markdown'
@@ -110,7 +111,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     } else {
       setIsDirty(false)
     }
-  }, [title, content, isPublished, initialPost, customSlug])
+  }, [title, content, isPublished, initialPost, customSlug, tagsInput, metaTitle, metaDescription, canonicalUrl, ogImageUrl, noindex])
 
   useEffect(() => {
     const init = async () => {
@@ -921,7 +922,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                 </div>
                 {ogImageUrl && (
                   <div className="mt-3">
-                    <img src={ogImageUrl} alt="OG preview" className="w-full h-32 rounded-lg border object-cover" />
+                    <Image src={ogImageUrl} alt="OG preview" width={400} height={128} className="w-full h-32 rounded-lg border object-cover" />
                   </div>
                 )}
               </div>
@@ -949,7 +950,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     Hide from search engines (noindex)
                   </label>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">When enabled, search engines won't index this post</p>
+                <p className="text-xs text-muted-foreground mt-2">When enabled, search engines won&apos;t index this post</p>
               </div>
             </div>
           </div>
