@@ -12,6 +12,7 @@ import { env } from '@/env.mjs'
 import { SocialShare } from '@/components/social-share'
 import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
 import { RelatedPosts } from '@/components/related-posts'
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 export const dynamic = 'force-dynamic'
 
@@ -178,9 +179,22 @@ export default async function Page({ params }: Props) {
             Writing
           </Link>
 
-          <h1 className="text-[40px] font-bold leading-tight mb-4">
-            {post.title}
-          </h1>
+          <div className="flex items-start justify-between mb-4">
+            <h1 className="text-[40px] font-bold leading-tight flex-1">
+              {post.title}
+            </h1>
+            <div className="ml-6 mt-2">
+              <LanguageSwitcher
+                currentLanguage={post.language_code || 'en'}
+                availableLanguages={post.translations ? Object.entries(post.translations).map(([code, translation]) => ({
+                  code,
+                  slug: translation.slug,
+                  title: translation.title
+                })) : []}
+                baseSlug={post.slug}
+              />
+            </div>
+          </div>
 
           <div className="flex items-center gap-2 text-[15px] text-muted-foreground mb-12">
             <time dateTime={post.created_at}>{new Date(post.created_at).toLocaleDateString('en-US', {

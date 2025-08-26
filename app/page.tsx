@@ -146,7 +146,7 @@ export default async function Home() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-20 border-t border-border/30 pt-20">
-          <Section title="Portfolio">
+          <Section title="Academic Works">
             {buildings.map((building) => (
               <div key={building.id} className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
                 <ProjectLink
@@ -230,6 +230,13 @@ export default async function Home() {
                   </p>
                 </div>
               )}
+              <div className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200 mt-4">
+                <ProjectLink
+                  href="/tools"
+                  title="Tools"
+                  description="Useful development and productivity tools"
+                />
+              </div>
             </div>
             <div>
               <h4 className="font-medium mb-3 text-[16px]">Social Media</h4>

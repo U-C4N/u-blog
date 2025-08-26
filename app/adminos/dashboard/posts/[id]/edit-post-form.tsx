@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music, ImagePlus, Link as LinkIcon, EyeOff, Sparkles } from 'lucide-react'
+import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music, ImagePlus, Link as LinkIcon, EyeOff, Sparkles, Globe, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { getSupabaseBrowser, type Post } from '../../../../../lib/supabase/config'
 import DOMPurify from 'dompurify'
@@ -35,7 +35,6 @@ const checkSupabaseConnection = async () => {
 
 const validateTitle = (title: string) => {
   if (title.length < 3) throw new Error('Title must be at least 3 characters')
-  if (title.length > 100) throw new Error('Title must be less than 100 characters')
   return true
 }
 
@@ -72,6 +71,11 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   const [canonicalUrl, setCanonicalUrl] = useState(initialPost.canonical_url || '')
   const [ogImageUrl, setOgImageUrl] = useState(initialPost.og_image_url || '')
   const [noindex, setNoindex] = useState(Boolean(initialPost.noindex))
+  const [currentLanguage, setCurrentLanguage] = useState(initialPost.language_code || 'en')
+  const [translations, setTranslations] = useState<{ [key: string]: { title: string; content: string; slug: string } }>(initialPost.translations || {})
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false)
+  const [originalTitle, setOriginalTitle] = useState(initialPost.title)
+  const [originalContent, setOriginalContent] = useState(initialPost.content)
 
   // Unsaved changes kontrolü
   useEffect(() => {
@@ -144,11 +148,21 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       const supabase = getSupabaseBrowser()
       console.log('Updating post:', { title, content: sanitizedContent, isPublished, id: initialPost.id })
       
+      // Save current content to translations before submitting
+      let finalTranslations = { ...translations }
+      if (currentLanguage !== 'en') {
+        finalTranslations[currentLanguage] = {
+          title: title,
+          content: sanitizedContent,
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        }
+      }
+
       const { data, error } = await supabase
         .from('posts')
         .update({
-          title,
-          content: sanitizedContent,
+          title: currentLanguage === 'en' ? title : originalTitle,
+          content: currentLanguage === 'en' ? sanitizedContent : originalContent,
           published: isPublished,
           tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
           meta_title: metaTitle || title,
@@ -156,10 +170,11 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
           canonical_url: canonicalUrl,
           og_image_url: ogImageUrl || null,
           noindex,
+          language_code: 'en',
+          translations: finalTranslations,
           updated_at: new Date().toISOString()
         })
         .eq('id', initialPost.id)
-        .select('*')
         .select('*')
 
       if (error) {
@@ -410,6 +425,39 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     }
   }, [title, content])
 
+  const handleLanguageSwitch = useCallback((newLanguage: string) => {
+    // Save current content to translations if not the original language
+    if (currentLanguage !== 'en') {
+      setTranslations(prev => ({
+        ...prev,
+        [currentLanguage]: {
+          title: title,
+          content: content,
+          slug: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        }
+      }))
+    } else {
+      // Update original content if we're switching from original language
+      setOriginalTitle(title)
+      setOriginalContent(content)
+    }
+
+    // Load content for new language
+    if (newLanguage === 'en') {
+      setTitle(originalTitle)
+      setContent(originalContent)
+    } else if (translations[newLanguage]) {
+      setTitle(translations[newLanguage].title)
+      setContent(translations[newLanguage].content)
+    } else {
+      // Start with empty content for new translation
+      setTitle('')
+      setContent('')
+    }
+
+    setCurrentLanguage(newLanguage)
+  }, [currentLanguage, title, content, originalTitle, originalContent, translations])
+
   return (
     <form onSubmit={handleSubmit} className="max-w-[1000px] mx-auto px-6 py-16">
       <div className="max-w-[700px] mx-auto">
@@ -479,18 +527,62 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
 
         <div className="space-y-6">
           <div>
-            <input
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              placeholder="Post title"
-              className="w-full text-[40px] font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
-            />
+            <div className="flex items-center justify-between mb-4">
+              <input
+                type="text"
+                value={title}
+                onChange={handleTitleChange}
+                placeholder="Post title"
+                className="flex-1 text-[40px] font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-primary/10 text-primary hover:bg-primary/20 rounded-md transition-colors ml-4"
+              >
+                <Globe className="w-4 h-4" />
+                {currentLanguage.toUpperCase()}
+              </button>
+            </div>
             {title && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                 <LinkIcon className="w-3 h-3" />
                 Slug: <span className="font-mono">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
               </p>
+            )}
+            {showLanguageSelector && (
+              <div className="bg-muted/20 p-4 rounded-lg border border-border/40 mb-4">
+                <h4 className="font-medium text-sm mb-3">Language Versions</h4>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {['en', 'tr', 'de', 'fr', 'es'].map((lang) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleLanguageSwitch(lang)}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        currentLanguage === lang
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newLang = prompt('Enter language code (e.g., zh, ja, ko):')
+                    if (newLang && newLang.length === 2) {
+                      setCurrentLanguage(newLang.toLowerCase())
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Language
+                </button>
+              </div>
             )}
           </div>
 

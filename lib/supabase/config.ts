@@ -116,6 +116,8 @@ export type Post = {
   canonical_url?: string
   og_image_url?: string
   noindex?: boolean
+  language_code?: string
+  translations?: { [key: string]: { title: string; content: string; slug: string } }
 }
 
 export type Project = {
