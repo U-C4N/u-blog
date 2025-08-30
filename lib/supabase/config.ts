@@ -30,49 +30,10 @@ export const getSupabaseBrowser = () => {
   })
 }
 
-// Initialize required storage buckets
+// Initialize required storage buckets - Disabled since buckets already exist
 export const initStorageBuckets = async () => {
-  try {
-    const client = supabase;
-    
-    // Check if blog-audio bucket exists
-    const { data: buckets, error: listError } = await client.storage.listBuckets();
-    
-    if (listError) {
-      console.error('Error listing buckets:', listError);
-      return;
-    }
-    
-    // Create blog-audio bucket if it doesn't exist
-    if (!buckets.find(bucket => bucket.name === 'blog-audio')) {
-      const { error: createError } = await client.storage.createBucket('blog-audio', {
-        public: true,
-        fileSizeLimit: 20971520 // 20MB in bytes
-      });
-      
-      if (createError) {
-        console.error('Error creating blog-audio bucket:', createError);
-      } else {
-        console.log('Created blog-audio bucket successfully');
-      }
-    }
-    
-    // Ensure blog-images bucket exists too
-    if (!buckets.find(bucket => bucket.name === 'blog-images')) {
-      const { error: createError } = await client.storage.createBucket('blog-images', {
-        public: true,
-        fileSizeLimit: 5242880 // 5MB in bytes
-      });
-      
-      if (createError) {
-        console.error('Error creating blog-images bucket:', createError);
-      } else {
-        console.log('Created blog-images bucket successfully');
-      }
-    }
-  } catch (error) {
-    console.error('Storage bucket initialization error:', error);
-  }
+  // Buckets already exist in the database, no need to recreate them
+  console.log('Storage buckets (blog-images, blog-audio) already configured');
 };
 
 // Types

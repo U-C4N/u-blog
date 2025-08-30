@@ -34,6 +34,15 @@ A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeSc
 
 ## 🆕 Latest Updates
 
+### August 30, 2025 - 🚀 Developer Tools & Multi-language Support
+- 🛠️ **Advanced Tool Suite**: Added comprehensive developer and productivity tools section
+- 📝 **Markdown Preview Tool**: Full-featured markdown editor with live preview, responsive design (mobile tabs, desktop side-by-side)
+- 🎨 **GLSL Shader Previewer**: WebGL-powered GLSL fragment shader previewer with real-time rendering capabilities
+- 🌐 **Multi-language Post Support**: Complete multi-language post sharing system with language switcher dropdown
+- 📱 **Enhanced Responsive Design**: Improved mobile and desktop layouts across all writing interfaces
+- 🔧 **Content Analysis Tools**: Integrated analysis and optimization tools for better content management
+- 🎯 **Improved Writing UI**: Redesigned writing interface with better user experience and responsive controls
+
 ### June 21, 2025 - ✨ Admin Panel Reimagined & SEO Supercharged
 - ✨ **Enhanced Admin Panel**: The admin panel UI has been completely redesigned for a more intuitive and streamlined user experience.
 - ⚙️ **Advanced SEO & Meta Settings**: You can now fine-tune your site's SEO with dedicated meta title, description, and keyword settings for each profile.

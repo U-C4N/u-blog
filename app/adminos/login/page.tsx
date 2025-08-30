@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Code2 } from 'lucide-react'
 
@@ -9,21 +9,29 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setIsLoading(true)
     setError('')
 
-    const formData = new FormData(e.currentTarget)
-    const username = formData.get('username')
-    const password = formData.get('password')
+    const emailInput = document.getElementById('email') as HTMLInputElement
+    const passwordInput = document.getElementById('password') as HTMLInputElement
+    
+    const email = emailInput?.value || ''
+    const password = passwordInput?.value || ''
+    
+    if (!email || !password) {
+      setError('Email ve şifre gerekli!')
+      setIsLoading(false)
+      return
+    }
 
-    // Simple admin/admin check
-    if (username === 'admin' && password === 'admin') {
+    // Direct check - no bullshit
+    if (email === 'umutcon12@example.com' && password === 'K7mN9#pR') {
       localStorage.setItem('adminAuth', 'true')
-      router.push('/adminos/dashboard')
+      window.location.href = '/adminos/dashboard'
+      return
     } else {
-      setError('Invalid credentials')
+      setError('Yanlış email veya şifre!')
     }
     
     setIsLoading(false)
@@ -50,14 +58,14 @@ export default function LoginPage() {
             )}
             
             <div>
-              <label htmlFor="username" className="text-[15px] text-muted-foreground block mb-2">
-                Username
+              <label htmlFor="email" className="text-[15px] text-muted-foreground block mb-2">
+                Email
               </label>
               <input
-                type="text"
-                id="username"
-                name="username"
-                defaultValue="admin"
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Email adresinizi girin"
                 className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
                 required
               />
@@ -71,14 +79,15 @@ export default function LoginPage() {
                 type="password"
                 id="password"
                 name="password"
-                defaultValue="admin"
+                placeholder="Şifrenizi girin"
                 className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
                 required
               />
             </div>
 
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={isLoading}
               className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
             >

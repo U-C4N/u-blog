@@ -69,9 +69,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Kullanıcı oturumunu al (isteğe bağlı, ziyaretçiyi tanımlamak için)
-  // await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
   // Statik dosyaları ve API rotalarını hariç tut
@@ -79,11 +76,22 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') || // Dosya uzantılarını hariç tut
-    pathname.startsWith('/adminos') // Admin panelini hariç tut
+    pathname.includes('.') // Dosya uzantılarını hariç tut
   ) {
     return response
   }
+
+  // Admin panel koruması - disabled for testing
+  // if (pathname.startsWith('/adminos') && pathname !== '/adminos/login') {
+  //   // Kullanıcı oturumunu kontrol et
+  //   const { data: { user }, error } = await supabase.auth.getUser()
+  //   
+  //   if (error || !user) {
+  //     // Giriş yapılmamışsa login sayfasına yönlendir
+  //     const loginUrl = new URL('/adminos/login', request.url)
+  //     return NextResponse.redirect(loginUrl)
+  //   }
+  // }
 
   // Ziyareti Supabase'e kaydet (arka planda çalıştır, yanıtı bloklama)
   supabase
@@ -106,8 +114,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - adminos (admin panel)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|adminos).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }

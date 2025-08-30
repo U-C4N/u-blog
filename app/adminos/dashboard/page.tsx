@@ -11,10 +11,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('adminAuth')
+    console.log('Dashboard - checking auth:', isAuthenticated)
     if (!isAuthenticated) {
-      router.push('/adminos/login')
+      console.log('Dashboard - not authenticated, redirecting to login')
+      window.location.href = '/adminos/login'
+    } else {
+      console.log('Dashboard - authenticated, showing dashboard')
     }
-  }, [router])
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('adminAuth')

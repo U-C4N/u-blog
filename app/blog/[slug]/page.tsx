@@ -307,13 +307,14 @@ export default async function Page({ params }: Props) {
                           {children}
                         </pre>
                       ),
-                      img: ({src, alt, ...props}) => (
+                      img: ({src, alt}) => (
                         <div className="my-8">
-                          <img 
-                            src={src} 
-                            alt={alt} 
+                          <Image 
+                            src={src || ''} 
+                            alt={alt || ''} 
+                            width={800}
+                            height={400}
                             className="w-full rounded-xl border border-border/30 shadow-sm" 
-                            {...props} 
                           />
                           {alt && (
                             <p className="text-center text-sm text-muted-foreground mt-2 italic">{alt}</p>

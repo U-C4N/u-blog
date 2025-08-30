@@ -117,35 +117,42 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <main className="max-w-[1000px] mx-auto px-6 py-20">
-        <header className="mb-20 flow-root">
-          <Image
-            src="/hope.png"
-            alt="Umutcan Edizaslan"
-            width={140}
-            height={140}
-            className="rounded-lg float-right ml-6 mb-6"
-          />
-          <div className="flex items-center gap-3 mb-3">
-            <h1 className="text-[24px] font-medium tracking-tight">{profile.name}</h1>
-            <span className="text-[24px] text-muted-foreground">~</span>
-            <div className="flex items-center gap-1">
-              <span className="text-[24px]">{profile.title}</span>
-              <Code2 className="w-5 h-5 text-muted-foreground" />
+      <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <header className="mb-12 sm:mb-20">
+          {/* Mobile: Stacked layout, Desktop: Float layout */}
+          <div className="block sm:flow-root">
+            <div className="flex flex-col sm:block">
+              <Image
+                src="/hope.png"
+                alt="Umutcan Edizaslan"
+                width={140}
+                height={140}
+                className="rounded-lg mx-auto sm:float-right sm:ml-6 mb-6 w-24 h-24 sm:w-[140px] sm:h-[140px]"
+              />
+              <div className="text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-3">
+                  <h1 className="text-xl sm:text-[24px] font-medium tracking-tight">{profile.name}</h1>
+                  <span className="hidden sm:inline text-[24px] text-muted-foreground">~</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-lg sm:text-[24px]">{profile.title}</span>
+                    <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                  </div>
+                </div>
+                <h2 className="text-base sm:text-[20px] text-muted-foreground font-normal mb-6 sm:mb-10">{profile.subtitle}</h2>
+              </div>
             </div>
-          </div>
-          <h2 className="text-[20px] text-muted-foreground font-normal mb-10">{profile.subtitle}</h2>
-          <div className="space-y-5">
-            <h3 className="text-[18px] font-medium">Present</h3>
-            {profile.present_text.slice(0, 3).map((text: string, index: number) => (
-              <p key={index} className="text-[16px] text-muted-foreground leading-relaxed">
-                {text}
-              </p>
-            ))}
+            <div className="space-y-4 sm:space-y-5 clear-both">
+              <h3 className="text-base sm:text-[18px] font-medium">Present</h3>
+              {profile.present_text.slice(0, 3).map((text: string, index: number) => (
+                <p key={index} className="text-sm sm:text-[16px] text-muted-foreground leading-relaxed">
+                  {text}
+                </p>
+              ))}
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-20 border-t border-border/30 pt-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 md:gap-20 border-t border-border/30 pt-8 sm:pt-12 md:pt-20">
           <Section title="Academic Works">
             {buildings.map((building) => (
               <div key={building.id} className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
@@ -239,8 +246,8 @@ export default async function Home() {
               </div>
             </div>
             <div>
-              <h4 className="font-medium mb-3 text-[16px]">Social Media</h4>
-              <div className="flex items-center gap-3">
+              <h4 className="font-medium mb-3 text-sm sm:text-[16px]">Social Media</h4>
+              <div className="flex items-center gap-2 sm:gap-3">
                 {profile.social_links?.twitter && (
                   <>
                     <Link 
@@ -250,7 +257,7 @@ export default async function Home() {
                       className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
                       aria-label="Twitter"
                     >
-                      <Twitter className="w-[18px] h-[18px]" />
+                      <Twitter className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </Link>
                     <span className="text-muted-foreground/60">,</span>
                   </>
@@ -264,7 +271,7 @@ export default async function Home() {
                       className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
                       aria-label="LinkedIn"
                     >
-                      <Linkedin className="w-[18px] h-[18px]" />
+                      <Linkedin className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </Link>
                     <span className="text-muted-foreground/60">,</span>
                   </>
@@ -277,7 +284,7 @@ export default async function Home() {
                     className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
                     aria-label="GitHub"
                   >
-                    <Github className="w-[18px] h-[18px]" />
+                    <Github className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                   </Link>
                 )}
               </div>
