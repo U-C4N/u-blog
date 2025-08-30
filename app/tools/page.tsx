@@ -23,7 +23,7 @@ const tools = [
   {
     id: 'glsl-previewer',
     title: 'GLSL Shader Previewer',
-    description: 'GLSL fragment shader\'larınızı gerçek zamanlı olarak yazın ve önizleyin. WebGL ile canlı rendering.',
+    description: 'GLSL fragment shader&apos;larınızı gerçek zamanlı olarak yazın ve önizleyin. WebGL ile canlı rendering.',
     href: '/tools/glsl-previewer',
     icon: Palette,
     category: 'Graphics',
@@ -43,7 +43,7 @@ const tools = [
   {
     id: 'color-palette',
     title: 'Color Palette Generator',
-    description: 'Güzel renk paletleri oluşturun ve hex kodlarını alın. Tasarımlarınız için renk harmony\'si.',
+    description: 'Güzel renk paletleri oluşturun ve hex kodlarını alın. Tasarımlarınız için renk harmony&apos;si.',
     href: '/tools/color-palette',
     icon: Palette,
     category: 'Design',

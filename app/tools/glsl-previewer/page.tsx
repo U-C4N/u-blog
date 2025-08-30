@@ -17,7 +17,7 @@ export default function GLSLPreviewerPage() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/tools" className="flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Tools'a Dön
+              Tools&apos;a Dön
             </Link>
           </Button>
         </div>
@@ -26,7 +26,7 @@ export default function GLSLPreviewerPage() {
           GLSL Shader Previewer
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground">
-          GLSL fragment shader'larınızı gerçek zamanlı olarak yazın ve önizleyin.
+          GLSL fragment shader&apos;larınızı gerçek zamanlı olarak yazın ve önizleyin.
         </p>
       </header>
 
