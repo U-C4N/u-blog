@@ -1,56 +1,198 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { useState, useRef, useCallback, useMemo } from 'react'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, RotateCcw, Eye, FileText, Download } from 'lucide-react'
-import CopyButton from '@/components/copy-button'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Sparkles, Code2, Eye } from 'lucide-react'
+import GLSLCanvas, { GLSLCanvasRef } from '@/components/glsl-canvas'
+import GLSLEditor from '@/components/glsl-editor'
+import UniformControls from '@/components/uniform-controls'
 
-const defaultShader = `#ifdef GL_ES
-precision mediump float;
-#endif
+interface ShaderTemplate {
+  id: string
+  name: string
+  description: string
+  code: string
+}
 
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform vec2 u_mouse;
-
-void main() {
-    vec2 st = gl_FragCoord.xy/u_resolution.xy;
-    
-    // Time varying pixel color
-    vec3 col = 0.5 + 0.5*cos(u_time + st.xyx + vec3(0,2,4));
-    
-    // Mouse interaction
-    vec2 mouse = u_mouse/u_resolution;
-    float d = distance(st, mouse);
-    col += 0.3 * exp(-d*10.0);
-    
-    gl_FragColor = vec4(col, 1.0);
+const shaderTemplates: ShaderTemplate[] = [
+  {
+    id: 'basic',
+    name: 'Basic Gradient',
+    description: 'Simple color gradient',
+    code: `void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
+    vec3 color = vec3(uv, 0.5 + 0.5 * sin(iTime));
+    fragColor = vec4(color, 1.0);
 }`
+  },
+  {
+    id: 'animated',
+    name: 'Animated Circles',
+    description: 'Animated colorful circles',
+    code: `void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
+    vec2 center = vec2(0.5, 0.5);
+    float dist = distance(uv, center);
+    
+    float circle = sin(dist * 10.0 - iTime * 2.0) * 0.5 + 0.5;
+    vec3 color = vec3(circle) * vec3(uv, sin(iTime));
+    
+    fragColor = vec4(color, 1.0);
+}`
+  },
+  {
+    id: 'mandelbrot',
+    name: 'Mandelbrot Set',
+    description: 'Classic fractal pattern',
+    code: `vec2 complexMult(vec2 a, vec2 b) {
+    return vec2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = (fragCoord - 0.5 * iResolution.xy) / min(iResolution.x, iResolution.y);
+    uv *= 3.0;
+    
+    vec2 z = vec2(0.0);
+    vec2 c = uv;
+    
+    int iterations = 0;
+    for (int i = 0; i < 100; i++) {
+        if (length(z) > 2.0) break;
+        z = complexMult(z, z) + c;
+        iterations++;
+    }
+    
+    float color = float(iterations) / 100.0;
+    fragColor = vec4(vec3(color), 1.0);
+}`
+  }
+]
+
+const defaultShader = shaderTemplates[0].code
 
 export default function GLSLPreviewer() {
+  const [shaderCode, setShaderCode] = useState(defaultShader)
+  const [selectedTemplate, setSelectedTemplate] = useState('basic')
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [compileError, setCompileError] = useState<string | null>(null)
+  const canvasRef = useRef<GLSLCanvasRef>(null)
+
+  const debouncedShaderCode = useMemo(() => {
+    const timeoutId = setTimeout(() => {
+      setCompileError(null)
+    }, 500)
+    return () => clearTimeout(timeoutId)
+  }, [shaderCode])
+
+  const handleTemplateChange = useCallback((templateId: string) => {
+    const template = shaderTemplates.find(t => t.id === templateId)
+    if (template) {
+      setShaderCode(template.code)
+      setSelectedTemplate(templateId)
+      setCompileError(null)
+    }
+  }, [])
+
+  const handlePlayPause = useCallback(() => {
+    setIsPlaying(!isPlaying)
+  }, [isPlaying])
+
+  const handleReset = useCallback(() => {
+    canvasRef.current?.reset()
+  }, [])
+
+  const handleShaderError = useCallback((error: string) => {
+    setCompileError(error)
+  }, [])
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-center p-12">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">
-            <Eye className="w-16 h-16 mx-auto" />
+      {/* Header Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <span className="font-medium">Real-time GLSL Editor</span>
+          <Badge variant="secondary" className="text-xs">
+            WebGL Powered
+          </Badge>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Select value={selectedTemplate} onValueChange={handleTemplateChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {shaderTemplates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">{template.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {template.description}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Main Interface */}
+      <ResizablePanelGroup direction="horizontal" className="min-h-[600px] max-h-[600px] rounded-lg border">
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <GLSLEditor 
+            value={shaderCode}
+            onChange={setShaderCode}
+            error={compileError}
+            className="h-full border-0 rounded-none"
+          />
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel defaultSize={50} minSize={30}>
+          <div className="h-full flex flex-col">
+            <GLSLCanvas 
+              ref={canvasRef}
+              fragmentShader={shaderCode}
+              className="flex-1 h-full"
+            />
           </div>
-          <h3 className="text-lg font-semibold mb-2">GLSL Previewer Geçici Olarak Kullanılamıyor</h3>
-          <p className="text-muted-foreground mb-4">
-            WebGL destekli GLSL shader previewer şu anda geliştirme aşamasındadır.
-          </p>
-          <div className="text-sm text-muted-foreground">
-            <p>💡 Yakında:</p>
-            <ul className="mt-2 space-y-1">
-              <li>• Gerçek zamanlı shader rendering</li>
-              <li>• Fragment shader desteği</li>
-              <li>• Hazır şablonlar</li>
-              <li>• Mouse ve zaman etkileşimleri</li>
-            </ul>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+
+      {/* Bottom Controls */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h3 className="font-medium mb-2 flex items-center gap-2">
+              <Code2 className="w-4 h-4" />
+              GLSL Fragment Shader
+            </h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              This editor supports Shadertoy-style GLSL fragment shaders. 
+              <code className="bg-background px-1 rounded text-xs">mainImage</code> write your function.
+            </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p><strong>Available uniforms:</strong></p>
+              <ul className="ml-4 space-y-0.5">
+                <li>• <code>iResolution</code> - Screen resolution (vec2)</li>
+                <li>• <code>iTime</code> - Elapsed time (float)</li>
+                <li>• <code>iMouse</code> - Mouse position (vec2)</li>
+              </ul>
+            </div>
           </div>
         </div>
+        
+        <UniformControls 
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          onReset={handleReset}
+        />
       </div>
     </div>
   )

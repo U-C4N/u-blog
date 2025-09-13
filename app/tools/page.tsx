@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Code2, Palette, Calculator, ArrowRight } from 'lucide-react'
+import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Tools | U-BLOG',
@@ -13,7 +13,7 @@ const tools = [
   {
     id: 'markdown-preview',
     title: 'Markdown Preview',
-    description: 'Markdown içeriğinizi canlı olarak önizleyin ve düzenleyin. Gerçek zamanlı render ile yazılarınızı test edin.',
+    description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',
     href: '/tools/markdown-preview',
     icon: FileText,
     category: 'Writing',
@@ -23,7 +23,7 @@ const tools = [
   {
     id: 'glsl-previewer',
     title: 'GLSL Shader Previewer',
-    description: 'GLSL fragment shader&apos;larınızı gerçek zamanlı olarak yazın ve önizleyin. WebGL ile canlı rendering.',
+    description: 'Write and preview GLSL fragment shaders in real-time. Live rendering with WebGL.',
     href: '/tools/glsl-previewer',
     icon: Palette,
     category: 'Graphics',
@@ -31,9 +31,19 @@ const tools = [
     status: 'active' as const
   },
   {
+    id: 'threejs-previewer',
+    title: 'Three.js Previewer',
+    description: 'Create and preview 3D scenes with Three.js. Real-time 3D rendering and live code editing.',
+    href: '/tools/threejs-previewer',
+    icon: Box,
+    category: 'Graphics',
+    tags: ['threejs', '3d', 'webgl', 'graphics'],
+    status: 'active' as const
+  },
+  {
     id: 'code-formatter',
     title: 'Code Formatter',
-    description: 'JavaScript, TypeScript, CSS ve HTML kodlarınızı düzenleyin ve formatlayın.',
+    description: 'Format and beautify your JavaScript, TypeScript, CSS and HTML code.',
     href: '/tools/code-formatter',
     icon: Code2,
     category: 'Development',
@@ -43,7 +53,7 @@ const tools = [
   {
     id: 'color-palette',
     title: 'Color Palette Generator',
-    description: 'Güzel renk paletleri oluşturun ve hex kodlarını alın. Tasarımlarınız için renk harmony&apos;si.',
+    description: 'Create beautiful color palettes and get hex codes. Color harmony for your designs.',
     href: '/tools/color-palette',
     icon: Palette,
     category: 'Design',
@@ -53,7 +63,7 @@ const tools = [
   {
     id: 'unit-converter',
     title: 'Unit Converter',
-    description: 'Farklı ölçü birimlerini kolayca dönüştürün. Pixel, rem, em ve diğer CSS birimleri.',
+    description: 'Easily convert different units of measurement. Pixels, rem, em and other CSS units.',
     href: '/tools/unit-converter',
     icon: Calculator,
     category: 'Utility',
@@ -65,10 +75,21 @@ const tools = [
 export default function ToolsPage() {
   return (
     <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-20">
+      {/* Back to Homepage Button */}
+      <div className="mb-8">
+        <Link 
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Homepage
+        </Link>
+      </div>
+      
       <header className="mb-12 sm:mb-20">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">Tools</h1>
         <p className="text-base sm:text-lg text-muted-foreground">
-          Geliştiriciler ve içerik üreticileri için faydalı araçlar. İş akışınızı hızlandırmak için tasarlandı.
+          Useful tools for developers and content creators. Designed to accelerate your workflow.
         </p>
       </header>
 
@@ -96,7 +117,7 @@ export default function ToolsPage() {
                               {tool.category}
                             </Badge>
                             <Badge variant="default" className="text-xs bg-green-100 text-green-800 hover:bg-green-100">
-                              Hazır
+                              Ready
                             </Badge>
                           </div>
                         </div>
@@ -137,7 +158,7 @@ export default function ToolsPage() {
                               {tool.category}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
-                              Yakında
+                              Coming Soon
                             </Badge>
                           </div>
                         </div>
@@ -167,11 +188,11 @@ export default function ToolsPage() {
       </div>
 
       <div className="mt-12 p-6 bg-muted/30 rounded-lg border border-border/40">
-        <h3 className="font-medium mb-2">🚀 Daha Fazla Tool Geliyor</h3>
+        <h3 className="font-medium mb-2">🚀 More Tools Coming</h3>
         <p className="text-sm text-muted-foreground">
-          Yakında daha fazla faydalı araç eklenecek. Öneriniz varsa{' '}
+          More useful tools will be added soon. If you have suggestions{' '}
           <a href="mailto:contact@example.com" className="text-foreground hover:underline">
-            iletişime geçin
+            get in touch
           </a>
           .
         </p>
