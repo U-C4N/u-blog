@@ -111,7 +111,6 @@ export default function ThreeJSEditor({
               roundedSelection: false,
               readOnly: false,
               cursorStyle: 'line',
-              automaticLayout: true,
             }}
           />
         </div>

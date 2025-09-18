@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -80,10 +80,11 @@ export default function GLSLPreviewer() {
   const [compileError, setCompileError] = useState<string | null>(null)
   const canvasRef = useRef<GLSLCanvasRef>(null)
 
-  const debouncedShaderCode = useMemo(() => {
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       setCompileError(null)
     }, 500)
+
     return () => clearTimeout(timeoutId)
   }, [shaderCode])
 

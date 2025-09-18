@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -156,13 +156,13 @@ export default function ThreeJSPreviewer() {
   const [error, setError] = useState<string | null>(null)
   const canvasRef = useRef<ThreeJSCanvasRef>(null)
 
-  const debouncedCode = useMemo(() => {
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       setError(null)
     }, 500)
+
     return () => clearTimeout(timeoutId)
   }, [code])
-
   const handleTemplateChange = useCallback((templateId: string) => {
     const template = codeTemplates.find(t => t.id === templateId)
     if (template) {

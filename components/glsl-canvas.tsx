@@ -122,7 +122,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
 
       console.log('Shader program created successfully')
       return program
-    }, [])
+    }, [vertexShaderSource])
 
     const setupCanvas = useCallback(() => {
       const canvas = canvasRef.current
@@ -272,7 +272,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
           cancelAnimationFrame(animationRef.current)
         }
       }
-    }, [])
+    }, [setupCanvas])
 
     // Setup ResizeObserver for canvas resizing
     useEffect(() => {
@@ -364,7 +364,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
                   {error}
                 </pre>
                 <p className="text-xs text-red-300">
-                  Browser console'u kontrol edin (F12) daha detaylı bilgi için.
+                  Browser console&apos;u kontrol edin (F12) daha detaylı bilgi için.
                 </p>
               </div>
             </AlertDescription>

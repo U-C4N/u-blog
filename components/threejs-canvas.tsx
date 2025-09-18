@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react'
+import { useRef, useEffect, forwardRef, useImperativeHandle, useState, useCallback } from 'react'
 import * as THREE from 'three'
 import { cn } from '@/lib/utils'
 
@@ -12,7 +12,7 @@ export interface ThreeJSCanvasRef {
 interface ThreeJSCanvasProps {
   code: string
   className?: string
-  onError?: (error: string) => void
+  onError?: (error: string | null) => void
 }
 
 const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
@@ -26,7 +26,7 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
     const clockRef = useRef<THREE.Clock>(new THREE.Clock())
     const [mounted, setMounted] = useState(false)
 
-    const executeUserCode = (userCode: string) => {
+    const executeUserCode = useCallback((userCode: string) => {
       try {
         // Clear previous user objects
         userObjectsRef.current.forEach(obj => {
@@ -74,9 +74,9 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
         console.error('Three.js code execution error:', error)
         onError?.(error instanceof Error ? error.message : 'Unknown error')
       }
-    }
+    }, [onError])
 
-    const animate = () => {
+    const animate = useCallback(() => {
       if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return
 
       try {
@@ -85,7 +85,7 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
       } catch (error) {
         console.error('Animation error:', error)
       }
-    }
+    }, [])
 
     useImperativeHandle(ref, () => ({
       reset: () => {
@@ -107,7 +107,13 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
     }, [])
 
     useEffect(() => {
-      if (!mountRef.current || !mounted) return
+      if (!mounted) return
+
+      const mountElement = mountRef.current
+      if (!mountElement) return
+
+      const initialWidth = mountElement.clientWidth || 1
+      const initialHeight = mountElement.clientHeight || 1
 
       // Initialize Three.js scene
       const scene = new THREE.Scene()
@@ -117,7 +123,7 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
       // Initialize camera
       const camera = new THREE.PerspectiveCamera(
         75,
-        mountRef.current.clientWidth / mountRef.current.clientHeight,
+        initialWidth / initialHeight,
         0.1,
         1000
       )
@@ -126,11 +132,11 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
 
       // Initialize renderer
       const renderer = new THREE.WebGLRenderer({ antialias: true })
-      renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight)
+      renderer.setSize(initialWidth, initialHeight)
       if (typeof window !== 'undefined') {
         renderer.setPixelRatio(window.devicePixelRatio)
       }
-      mountRef.current.appendChild(renderer.domElement)
+      mountElement.appendChild(renderer.domElement)
       rendererRef.current = renderer
 
       // Add basic lighting
@@ -145,11 +151,11 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
 
       // Handle resize
       const handleResize = () => {
-        if (!mountRef.current || !camera || !renderer) return
-        
-        const width = mountRef.current.clientWidth
-        const height = mountRef.current.clientHeight
-        
+        if (!camera || !renderer) return
+
+        const width = mountElement.clientWidth
+        const height = mountElement.clientHeight || 1
+
         camera.aspect = width / height
         camera.updateProjectionMatrix()
         renderer.setSize(width, height)
@@ -163,24 +169,24 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
         if (typeof window !== 'undefined') {
           window.removeEventListener('resize', handleResize)
         }
-        
+
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current)
         }
-        
-        if (rendererRef.current) {
-          rendererRef.current.dispose()
-        }
-        
-        if (mountRef.current && rendererRef.current?.domElement) {
-          mountRef.current.removeChild(rendererRef.current.domElement)
-        }
-      }
-    }, [mounted])
 
+        renderer.dispose()
+        if (renderer.domElement.parentElement === mountElement) {
+          mountElement.removeChild(renderer.domElement)
+        }
+
+        rendererRef.current = null
+        sceneRef.current = null
+        cameraRef.current = null
+      }
+    }, [mounted, animate])
     useEffect(() => {
       executeUserCode(code)
-    }, [code])
+    }, [code, executeUserCode])
 
     return (
       <div
