@@ -345,7 +345,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
           <Alert className="max-w-md">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Shader kodu geçersiz. Lütfen <code>mainImage(out vec4 fragColor, in vec2 fragCoord)</code> fonksiyonu içeren geçerli bir GLSL fragment shader yazın.
+              Shader code is invalid. Please provide a GLSL fragment shader that includes <code>mainImage(out vec4 fragColor, in vec2 fragCoord)</code>.
             </AlertDescription>
           </Alert>
         </div>
@@ -364,7 +364,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
                   {error}
                 </pre>
                 <p className="text-xs text-red-300">
-                  Browser console&apos;u kontrol edin (F12) daha detaylı bilgi için.
+                  Check the browser console (F12) for more detailed information.
                 </p>
               </div>
             </AlertDescription>

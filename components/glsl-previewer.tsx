@@ -176,14 +176,14 @@ export default function GLSLPreviewer() {
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
               This editor supports Shadertoy-style GLSL fragment shaders. 
-              <code className="bg-background px-1 rounded text-xs">mainImage</code> write your function.
+              Define your logic inside the <code className="bg-background px-1 rounded text-xs">mainImage</code> function.
             </p>
             <div className="text-xs text-muted-foreground space-y-1">
               <p><strong>Available uniforms:</strong></p>
               <ul className="ml-4 space-y-0.5">
-                <li>• <code>iResolution</code> - Screen resolution (vec2)</li>
-                <li>• <code>iTime</code> - Elapsed time (float)</li>
-                <li>• <code>iMouse</code> - Mouse position (vec2)</li>
+                <li>- <code>iResolution</code> - Screen resolution (vec2)</li>
+                <li>- <code>iTime</code> - Elapsed time (float)</li>
+                <li>- <code>iMouse</code> - Mouse position (vec2)</li>
               </ul>
             </div>
           </div>

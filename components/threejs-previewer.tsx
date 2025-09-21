@@ -327,17 +327,17 @@ export default function ThreeJSPreviewer() {
             <div className="space-y-2">
               <div className="text-xs font-medium text-purple-800 dark:text-purple-200">Animation:</div>
               <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <p>• Use <code className="bg-purple-100 dark:bg-purple-900 px-1 rounded">requestAnimationFrame</code></p>
-                <p>• Access time: <code className="bg-purple-100 dark:bg-purple-900 px-1 rounded">clock.getElapsedTime()</code></p>
+                <p>- Use <code className="bg-purple-100 dark:bg-purple-900 px-1 rounded">requestAnimationFrame</code></p>
+                <p>- Access time: <code className="bg-purple-100 dark:bg-purple-900 px-1 rounded">clock.getElapsedTime()</code></p>
               </div>
             </div>
             
             <div className="space-y-2">
               <div className="text-xs font-medium text-purple-800 dark:text-purple-200">Scene Setup:</div>
               <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <p>• Camera at (0, 0, 5)</p>
-                <p>• Ambient + directional lighting</p>
-                <p>• Dark scene background</p>
+                <p>- Camera at (0, 0, 5)</p>
+                <p>- Ambient + directional lighting</p>
+                <p>- Dark scene background</p>
               </div>
             </div>
             

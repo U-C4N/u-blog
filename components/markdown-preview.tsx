@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Copy, Eye, FileText, Download } from 'lucide-react'
@@ -29,8 +29,8 @@ function parseMarkdown(markdown: string): string {
     .replace(/^\- (.*$)/gim, '<li class="ml-4">$1</li>')
     .replace(/^(\d+)\. (.*$)/gim, '<li class="ml-4">$2</li>')
     // Line breaks
-    .replace(/\n\n/gim, '</p><p class="mb-4">')
-    .replace(/\n/gim, '<br>')
+    .replace(/\r?\n\r?\n/gim, '</p><p class="mb-4">')
+    .replace(/\r?\n/gim, '<br>')
 
   // Wrap in paragraphs and handle lists
   html = html.replace(/(<li.*<\/li>)/g, (match) => {
@@ -44,16 +44,16 @@ function parseMarkdown(markdown: string): string {
 
 const defaultMarkdown = `# Markdown Preview Tool
 
-Bu araç ile **markdown** metninizi kolayca önizleyebilirsiniz.
+Use this tool to preview your **markdown** content instantly.
 
-## Desteklenen Özellikler
+## Supported Features
 
-- **Kalın metin** ve *italik metin*
-- \`inline kod\` blokları
-- [Linkler](https://example.com)
-- Liste ögeleri
+- **Bold text** and *italic text*
+- \`inline code\` snippets
+- [Links](https://example.com)
+- List items
 
-### Kod Blokları
+### Code Blocks
 
 \`\`\`
 function hello() {
@@ -61,7 +61,7 @@ function hello() {
 }
 \`\`\`
 
-Bu tool ile markdown yazılarınızı kolayca test edebilirsiniz!`
+Experiment with your markdown here and see the changes live.`
 
 export default function MarkdownPreview() {
   const [markdown, setMarkdown] = useState(defaultMarkdown)
@@ -99,7 +99,7 @@ export default function MarkdownPreview() {
             className="h-8"
           >
             <Download className="w-3 h-3 mr-1" />
-            İndir
+            Download
           </Button>
         </div>
       </div>
@@ -116,7 +116,7 @@ export default function MarkdownPreview() {
             }`}
           >
             <FileText className="w-4 h-4 inline mr-2" />
-            Yaz
+            Write
           </button>
           <button
             onClick={() => setActiveTab('preview')}
@@ -127,7 +127,7 @@ export default function MarkdownPreview() {
             }`}
           >
             <Eye className="w-4 h-4 inline mr-2" />
-            Önizle
+            Preview
           </button>
         </div>
 
@@ -137,7 +137,7 @@ export default function MarkdownPreview() {
               value={markdown}
               onChange={(e) => setMarkdown(e.target.value)}
               className="w-full h-[400px] p-4 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm font-mono"
-              placeholder="Markdown metninizi buraya yazın..."
+              placeholder="Write your markdown here..."
             />
           ) : (
             <Card className="h-[400px]">
@@ -162,15 +162,15 @@ export default function MarkdownPreview() {
           <textarea
             value={markdown}
             onChange={(e) => setMarkdown(e.target.value)}
-            className="w-full h-[500px] p-4 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm font-mono"
-            placeholder="Markdown metninizi buraya yazın..."
+            className="w-full h-[500px] p-4 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-ring focus-border-transparent text-sm font-mono"
+            placeholder="Write your markdown here..."
           />
         </div>
 
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Eye className="w-4 h-4" />
-            <h3 className="font-medium">Önizleme</h3>
+            <h3 className="font-medium">Preview</h3>
           </div>
           <Card className="h-[500px]">
             <CardContent className="p-4 h-full overflow-y-auto">
@@ -184,7 +184,7 @@ export default function MarkdownPreview() {
       </div>
 
       <div className="text-xs text-muted-foreground">
-        💡 Bu araç temel markdown sözdizimini destekler: başlıklar, kalın/italik metin, kod blokları, listeler ve linkler.
+        Tip: This tool supports fundamental Markdown syntax including headings, bold and italic text, code blocks, lists, and links.
       </div>
     </div>
   )

@@ -17,7 +17,7 @@ export default function MarkdownPreviewPage() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/tools" className="flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Tools&apos;a Dön
+              Back to Tools
             </Link>
           </Button>
         </div>
@@ -26,7 +26,7 @@ export default function MarkdownPreviewPage() {
           Markdown Preview
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground">
-          Markdown içeriğinizi canlı olarak önizleyin ve düzenleyin.
+          Preview and edit your markdown content in real time.
         </p>
       </header>
 

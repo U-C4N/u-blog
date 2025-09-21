@@ -1,12 +1,12 @@
-import { headers } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
-import AddPromptButton from "./add-prompt-button";
-import { Prompt } from "@/lib/supabase/config";
+import NextImage from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, Copy, Check } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
+import { Prompt } from "@/lib/supabase/config";
+import AddPromptButton from "./add-prompt-button";
 import EditPromptDialog from "./edit-prompt-dialog";
 import DeletePromptButton from "./delete-prompt-button";
 import CopyPromptButton from "./copy-prompt-button";
+import { ArrowLeft, MessageSquare, Image as ImageIcon, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,12 +19,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -35,6 +35,11 @@ export default async function PromptsPage() {
     .from("prompts")
     .select("*")
     .order("created_at", { ascending: false });
+
+  const totalPrompts = prompts?.length ?? 0;
+  const promptsWithImages = prompts?.filter((prompt) => Boolean(prompt.image_url)).length ?? 0;
+  const lastUpdatedRaw = prompts?.[0]?.updated_at ?? prompts?.[0]?.created_at;
+  const lastUpdated = lastUpdatedRaw ? formatDate(lastUpdatedRaw) : "—";
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +68,7 @@ export default async function PromptsPage() {
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold">{prompts?.length || 0}</p>
+                  <p className="text-2xl font-bold">{totalPrompts}</p>
                   <p className="text-sm text-muted-foreground">Total Prompts</p>
                 </div>
               </div>
@@ -72,10 +77,10 @@ export default async function PromptsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2">
-                <Copy className="w-5 h-5 text-green-500" />
+                <ImageIcon className="w-5 h-5 text-green-500" />
                 <div>
-                  <p className="text-2xl font-bold">∞</p>
-                  <p className="text-sm text-muted-foreground">Usage Count</p>
+                  <p className="text-2xl font-bold">{promptsWithImages}</p>
+                  <p className="text-sm text-muted-foreground">Prompts with Images</p>
                 </div>
               </div>
             </CardContent>
@@ -83,10 +88,10 @@ export default async function PromptsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-blue-500" />
+                <Clock className="w-5 h-5 text-blue-500" />
                 <div>
-                  <p className="text-2xl font-bold">Ready</p>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="text-2xl font-bold">{lastUpdated}</p>
+                  <p className="text-sm text-muted-foreground">Latest Update</p>
                 </div>
               </div>
             </CardContent>
@@ -97,7 +102,21 @@ export default async function PromptsPage() {
         {prompts && prompts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {prompts.map((prompt: Prompt) => (
-              <Card key={prompt.id} className="group hover:shadow-lg transition-all duration-200 border-border/50 hover:border-border">
+              <Card
+                key={prompt.id}
+                className="group overflow-hidden hover:shadow-lg transition-all duration-200 border-border/50 hover:border-border"
+              >
+                {prompt.image_url && (
+                  <div className="relative h-40 w-full border-b border-border/60">
+                    <NextImage
+                      src={prompt.image_url}
+                      alt={prompt.title}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -128,6 +147,11 @@ export default async function PromptsPage() {
                         <Badge variant="secondary" className="text-xs">
                           AI Prompt
                         </Badge>
+                        {prompt.image_url && (
+                          <Badge variant="outline" className="text-xs">
+                            Image attached
+                          </Badge>
+                        )}
                       </div>
                       <CopyPromptButton content={prompt.content} />
                     </div>
