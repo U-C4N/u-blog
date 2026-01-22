@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
       if (profileRes.data) {
         // social_links tipini kontrol et ve dönüştür
-        let socialLinks = { twitter: '', linkedin: '', github: '' }
+        let socialLinks: { twitter?: string; linkedin?: string; github?: string } = { twitter: '', linkedin: '', github: '' }
         if (profileRes.data.social_links && typeof profileRes.data.social_links === 'object' && !Array.isArray(profileRes.data.social_links)) {
           const links = profileRes.data.social_links as Record<string, unknown>
           socialLinks = {
@@ -69,9 +69,12 @@ export default function ProfilePage() {
           }
         }
 
+        // social_links'i çıkarıp spread yap, sonra tekrar ekle
+        const { social_links: _, ...profileDataWithoutSocialLinks } = profileRes.data
+        
         setProfile({
           ...defaultProfile,
-          ...profileRes.data,
+          ...profileDataWithoutSocialLinks,
           social_links: socialLinks,
           meta_keywords: profileRes.data.meta_keywords || []
         });

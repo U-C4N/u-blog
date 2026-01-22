@@ -98,14 +98,26 @@ export default async function Home() {
 
   // Extract data with fallbacks
   const profile = profileRes.status === 'fulfilled' && profileRes.value.data
-    ? {
-        ...profileRes.value.data,
-        social_links: {
-          twitter: profileRes.value.data.social_links?.twitter || '',
-          linkedin: profileRes.value.data.social_links?.linkedin || '',
-          github: profileRes.value.data.social_links?.github || ''
+    ? (() => {
+        // social_links tipini kontrol et ve dönüştür
+        let socialLinks = { twitter: '', linkedin: '', github: '' }
+        if (profileRes.value.data.social_links && typeof profileRes.value.data.social_links === 'object' && !Array.isArray(profileRes.value.data.social_links)) {
+          const links = profileRes.value.data.social_links as Record<string, unknown>
+          socialLinks = {
+            twitter: typeof links.twitter === 'string' ? links.twitter : '',
+            linkedin: typeof links.linkedin === 'string' ? links.linkedin : '',
+            github: typeof links.github === 'string' ? links.github : ''
+          }
         }
-      }
+        
+        // social_links'i çıkarıp spread yap, sonra tekrar ekle
+        const { social_links: _, ...profileDataWithoutSocialLinks } = profileRes.value.data
+        
+        return {
+          ...profileDataWithoutSocialLinks,
+          social_links: socialLinks
+        }
+      })()
     : defaultProfile
 
   const buildingsRaw = buildingsRes.status === 'fulfilled' ? buildingsRes.value.data || [] : []
