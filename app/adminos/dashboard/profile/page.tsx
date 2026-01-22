@@ -58,10 +58,21 @@ export default function ProfilePage() {
       ]);
 
       if (profileRes.data) {
+        // social_links tipini kontrol et ve dönüştür
+        let socialLinks = { twitter: '', linkedin: '', github: '' }
+        if (profileRes.data.social_links && typeof profileRes.data.social_links === 'object' && !Array.isArray(profileRes.data.social_links)) {
+          const links = profileRes.data.social_links as Record<string, unknown>
+          socialLinks = {
+            twitter: typeof links.twitter === 'string' ? links.twitter : '',
+            linkedin: typeof links.linkedin === 'string' ? links.linkedin : '',
+            github: typeof links.github === 'string' ? links.github : ''
+          }
+        }
+
         setProfile({
           ...defaultProfile,
           ...profileRes.data,
-          social_links: profileRes.data.social_links || { twitter: '', linkedin: '', github: '' },
+          social_links: socialLinks,
           meta_keywords: profileRes.data.meta_keywords || []
         });
       }
