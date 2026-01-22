@@ -28,7 +28,14 @@ const getPost = cache(async (id: string): Promise<Post | null> => {
   const transformedPost: Post = {
     ...data,
     content: data.content ?? '',
-    published: data.published ?? false
+    published: data.published ?? false,
+    tags: data.tags ?? undefined,
+    meta_title: data.meta_title ?? undefined,
+    meta_description: data.meta_description ?? undefined,
+    canonical_url: data.canonical_url ?? undefined,
+    og_image_url: data.og_image_url ?? undefined,
+    noindex: data.noindex ?? undefined,
+    translations: data.translations ? (data.translations as { [key: string]: { title: string; content: string; slug: string } }) : undefined
   }
   
   return transformedPost
