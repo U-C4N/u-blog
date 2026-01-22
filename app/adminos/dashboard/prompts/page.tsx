@@ -14,7 +14,8 @@ import { Separator } from "@/components/ui/separator";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-function formatDate(dateString: string) {
+function formatDate(dateString: string | undefined) {
+  if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -26,10 +27,14 @@ function formatDate(dateString: string) {
 
 export default async function PromptsPage() {
   
-  const { data: promptsRaw } = await supabase
+  const { data: promptsRaw, error } = await supabase
     .from("prompts")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching prompts:", error);
+  }
 
   // null değerleri undefined'a dönüştür (Prompt tipi undefined bekliyor)
   const prompts: Prompt[] = (promptsRaw || []).map((prompt) => ({

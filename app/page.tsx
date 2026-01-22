@@ -148,8 +148,25 @@ export default async function Home() {
     created_at: building.created_at ?? undefined,
     updated_at: building.updated_at ?? undefined
   }))
-  const selectedRepos = reposRes.status === 'fulfilled' ? reposRes.value.data || [] : []
-  const prompts = promptsRes.status === 'fulfilled' ? promptsRes.value.data || [] : []
+  
+  // Veritabanından gelen nullable değerleri GithubRepo tipine uygun hale getir
+  const reposRaw = reposRes.status === 'fulfilled' ? reposRes.value.data || [] : []
+  const selectedRepos: GithubRepo[] = reposRaw.map((repo) => ({
+    ...repo,
+    description: repo.description ?? undefined,
+    selected: repo.selected ?? false,
+    created_at: repo.created_at ?? undefined,
+    updated_at: repo.updated_at ?? undefined
+  }))
+  
+  // Veritabanından gelen nullable değerleri Prompt tipine uygun hale getir
+  const promptsRaw = promptsRes.status === 'fulfilled' ? promptsRes.value.data || [] : []
+  const prompts: Prompt[] = promptsRaw.map((prompt) => ({
+    ...prompt,
+    image_url: prompt.image_url ?? undefined,
+    created_at: prompt.created_at ?? undefined,
+    updated_at: prompt.updated_at ?? undefined
+  }))
 
   const structuredData = generatePersonStructuredData(profile)
 
