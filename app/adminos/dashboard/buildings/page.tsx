@@ -24,7 +24,15 @@ export default function BuildingsPage() {
         .order('order_index')
 
       if (error) throw error
-      setBuildings(data || [])
+      
+      // Veritabanından gelen nullable değerleri Building tipine uygun hale getir
+      const transformedBuildings: Building[] = (data || []).map((building) => ({
+        ...building,
+        external: building.external ?? false,
+        order_index: building.order_index ?? 0
+      }))
+      
+      setBuildings(transformedBuildings)
     } catch (err: any) {
       console.error('Error fetching buildings:', err)
       setError(err.message)

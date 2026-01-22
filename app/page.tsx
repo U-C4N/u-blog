@@ -108,7 +108,13 @@ export default async function Home() {
       }
     : defaultProfile
 
-  const buildings = buildingsRes.status === 'fulfilled' ? buildingsRes.value.data || [] : []
+  const buildingsRaw = buildingsRes.status === 'fulfilled' ? buildingsRes.value.data || [] : []
+  // Veritabanından gelen nullable değerleri Building tipine uygun hale getir
+  const buildings: Building[] = buildingsRaw.map((building) => ({
+    ...building,
+    external: building.external ?? false,
+    order_index: building.order_index ?? 0
+  }))
   const selectedRepos = reposRes.status === 'fulfilled' ? reposRes.value.data || [] : []
   const prompts = promptsRes.status === 'fulfilled' ? promptsRes.value.data || [] : []
 

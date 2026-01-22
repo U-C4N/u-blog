@@ -66,7 +66,14 @@ export default function ProfilePage() {
         });
       }
 
-      setBuildings(buildingsRes.data || []);
+      // Veritabanından gelen nullable değerleri Building tipine uygun hale getir
+      const buildingsRaw = buildingsRes.data || []
+      const transformedBuildings: BuildingType[] = buildingsRaw.map((building) => ({
+        ...building,
+        external: building.external ?? false,
+        order_index: building.order_index ?? 0
+      }))
+      setBuildings(transformedBuildings);
       setGithubRepos(reposRes.data || []);
     } catch (err) {
       setError('Failed to load data');
