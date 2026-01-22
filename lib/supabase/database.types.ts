@@ -7,241 +7,235 @@ export type Json =
   | Json[]
 
 export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
-      posts: {
-        Row: {
-          id: string
-          title: string
-          slug: string
-          content: string
-          published: boolean
-          created_at: string
-          updated_at: string
-          tags: string[] | null
-          views: number | null
-          meta_title: string | null
-          meta_description: string | null
-          canonical_url: string | null
-          og_image_url: string | null
-          noindex: boolean | null
-          language_code: string | null
-          translations: Json | null
-        }
-        Insert: {
-          id?: string
-          title: string
-          slug: string
-          content: string
-          published?: boolean
-          created_at?: string
-          updated_at?: string
-          tags?: string[] | null
-          views?: number | null
-          meta_title?: string | null
-          meta_description?: string | null
-          canonical_url?: string | null
-          og_image_url?: string | null
-          noindex?: boolean | null
-          language_code?: string | null
-          translations?: Json | null
-        }
-        Update: {
-          id?: string
-          title?: string
-          slug?: string
-          content?: string
-          published?: boolean
-          created_at?: string
-          updated_at?: string
-          tags?: string[] | null
-          views?: number | null
-          meta_title?: string | null
-          meta_description?: string | null
-          canonical_url?: string | null
-          og_image_url?: string | null
-          noindex?: boolean | null
-          language_code?: string | null
-          translations?: Json | null
-        }
-      }
-      profiles: {
-        Row: {
-          id: string
-          name: string
-          title: string
-          subtitle: string
-          present_text: string[]
-          social_links: Json | null
-          github_token: string | null
-          github_username: string | null
-          meta_description: string | null
-          meta_keywords: string[] | null
-          og_image_url: string | null
-          twitter_card_type: string | null
-          website_url: string | null
-          location: string | null
-          company: string | null
-          job_title: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          title: string
-          subtitle: string
-          present_text: string[]
-          social_links?: Json | null
-          github_token?: string | null
-          github_username?: string | null
-          meta_description?: string | null
-          meta_keywords?: string[] | null
-          og_image_url?: string | null
-          twitter_card_type?: string | null
-          website_url?: string | null
-          location?: string | null
-          company?: string | null
-          job_title?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          title?: string
-          subtitle?: string
-          present_text?: string[]
-          social_links?: Json | null
-          github_token?: string | null
-          github_username?: string | null
-          meta_description?: string | null
-          meta_keywords?: string[] | null
-          og_image_url?: string | null
-          twitter_card_type?: string | null
-          website_url?: string | null
-          location?: string | null
-          company?: string | null
-          job_title?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      projects: {
-        Row: {
-          id: string
-          label: string
-          url: string
-          description: string
-          order_index: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          label: string
-          url: string
-          description: string
-          order_index?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          label?: string
-          url?: string
-          description?: string
-          order_index?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
       buildings: {
         Row: {
-          id: string
-          title: string
+          created_at: string | null
           description: string
-          external: boolean
+          external: boolean | null
+          id: string
+          order_index: number | null
+          title: string
+          updated_at: string | null
           url: string | null
-          order_index: number
-          created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: string
-          title: string
+          created_at?: string | null
           description: string
-          external?: boolean
+          external?: boolean | null
+          id?: string
+          order_index?: number | null
+          title: string
+          updated_at?: string | null
           url?: string | null
-          order_index?: number
-          created_at?: string
-          updated_at?: string
         }
         Update: {
-          id?: string
-          title?: string
+          created_at?: string | null
           description?: string
-          external?: boolean
+          external?: boolean | null
+          id?: string
+          order_index?: number | null
+          title?: string
+          updated_at?: string | null
           url?: string | null
-          order_index?: number
-          created_at?: string
-          updated_at?: string
         }
+        Relationships: []
       }
       github_repos: {
         Row: {
+          created_at: string | null
+          description: string | null
           id: string
           repo_name: string
           repo_url: string
-          description: string | null
-          selected: boolean
-          created_at: string
-          updated_at: string
+          selected: boolean | null
+          updated_at: string | null
         }
         Insert: {
+          created_at?: string | null
+          description?: string | null
           id?: string
           repo_name: string
           repo_url: string
-          description?: string | null
-          selected?: boolean
-          created_at?: string
-          updated_at?: string
+          selected?: boolean | null
+          updated_at?: string | null
         }
         Update: {
+          created_at?: string | null
+          description?: string | null
           id?: string
           repo_name?: string
           repo_url?: string
-          description?: string | null
-          selected?: boolean
-          created_at?: string
-          updated_at?: string
+          selected?: boolean | null
+          updated_at?: string | null
         }
+        Relationships: []
       }
-      prompts: {
+      posts: {
         Row: {
-          id: string
-          title: string
-          content: string
-          image_url: string | null
+          canonical_url: string | null
+          content: string | null
           created_at: string
+          id: string
+          language_code: string
+          meta_description: string | null
+          meta_title: string | null
+          noindex: boolean | null
+          og_image_url: string | null
+          published: boolean | null
+          slug: string
+          tags: string[] | null
+          title: string
+          translations: Json | null
           updated_at: string
         }
         Insert: {
-          id?: string
-          title: string
-          content: string
-          image_url?: string | null
+          canonical_url?: string | null
+          content?: string | null
           created_at?: string
+          id?: string
+          language_code?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          noindex?: boolean | null
+          og_image_url?: string | null
+          published?: boolean | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          translations?: Json | null
           updated_at?: string
         }
         Update: {
-          id?: string
-          title?: string
-          content?: string
-          image_url?: string | null
+          canonical_url?: string | null
+          content?: string | null
           created_at?: string
+          id?: string
+          language_code?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          noindex?: boolean | null
+          og_image_url?: string | null
+          published?: boolean | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          translations?: Json | null
           updated_at?: string
         }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          github_token: string | null
+          github_username: string | null
+          id: string
+          job_title: string | null
+          location: string | null
+          meta_description: string | null
+          meta_keywords: string[] | null
+          name: string
+          og_image_url: string | null
+          present_text: string[]
+          social_links: Json | null
+          subtitle: string
+          title: string
+          twitter_card_type: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          github_token?: string | null
+          github_username?: string | null
+          id?: string
+          job_title?: string | null
+          location?: string | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          name: string
+          og_image_url?: string | null
+          present_text?: string[]
+          social_links?: Json | null
+          subtitle: string
+          title: string
+          twitter_card_type?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          github_token?: string | null
+          github_username?: string | null
+          id?: string
+          job_title?: string | null
+          location?: string | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          name?: string
+          og_image_url?: string | null
+          present_text?: string[]
+          social_links?: Json | null
+          subtitle?: string
+          title?: string
+          twitter_card_type?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      prompts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      visits: {
+        Row: {
+          id: string
+          pathname: string | null
+          visited_at: string | null
+        }
+        Insert: {
+          id?: string
+          pathname?: string | null
+          visited_at?: string | null
+        }
+        Update: {
+          id?: string
+          pathname?: string | null
+          visited_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -253,5 +247,14 @@ export type Database = {
     Enums: {
       [_ in never]: never
     }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
