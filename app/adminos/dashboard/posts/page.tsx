@@ -32,7 +32,22 @@ export default function PostsPage() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setPosts(data || [])
+      
+      // Veritabanından gelen nullable değerleri Post tipine uygun hale getir
+      const transformedPosts: Post[] = (data || []).map((post) => ({
+        ...post,
+        content: post.content ?? '',
+        published: post.published ?? false,
+        tags: post.tags ?? undefined,
+        meta_title: post.meta_title ?? undefined,
+        meta_description: post.meta_description ?? undefined,
+        canonical_url: post.canonical_url ?? undefined,
+        og_image_url: post.og_image_url ?? undefined,
+        noindex: post.noindex ?? undefined,
+        translations: post.translations ? (post.translations as { [key: string]: { title: string; content: string; slug: string } }) : undefined
+      }))
+      
+      setPosts(transformedPosts)
     } catch (err: any) {
       console.error('Error fetching posts:', err)
       setError(err.message || 'Failed to load posts')

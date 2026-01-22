@@ -50,7 +50,23 @@ const getPost = cache(async (slug: string): Promise<Post | null> => {
     return null
   }
 
-  return data
+  if (!data) return null
+
+  // Veritabanından gelen nullable değerleri Post tipine uygun hale getir
+  const transformedPost: Post = {
+    ...data,
+    content: data.content ?? '',
+    published: data.published ?? false,
+    tags: data.tags ?? undefined,
+    meta_title: data.meta_title ?? undefined,
+    meta_description: data.meta_description ?? undefined,
+    canonical_url: data.canonical_url ?? undefined,
+    og_image_url: data.og_image_url ?? undefined,
+    noindex: data.noindex ?? undefined,
+    translations: data.translations ? (data.translations as { [key: string]: { title: string; content: string; slug: string } }) : undefined
+  }
+
+  return transformedPost
 })
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -47,7 +47,7 @@ function generateBlogListingStructuredData(posts: Post[]) {
 }
 
 export default async function BlogPage() {
-  const { data: posts, error } = await supabase
+  const { data: postsRaw, error } = await supabase
     .from('posts')
     .select('*')
     .eq('published', true)
@@ -66,12 +66,26 @@ export default async function BlogPage() {
     )
   }
 
+  // Veritabanından gelen nullable değerleri Post tipine uygun hale getir
+  const posts: Post[] = (postsRaw || []).map((post) => ({
+    ...post,
+    content: post.content ?? '',
+    published: post.published ?? false,
+    tags: post.tags ?? undefined,
+    meta_title: post.meta_title ?? undefined,
+    meta_description: post.meta_description ?? undefined,
+    canonical_url: post.canonical_url ?? undefined,
+    og_image_url: post.og_image_url ?? undefined,
+    noindex: post.noindex ?? undefined,
+    translations: post.translations ? (post.translations as { [key: string]: { title: string; content: string; slug: string } }) : undefined
+  }))
+
   // Use toSorted() for immutable sorting
-  const years = Array.from(new Set((posts || []).map(post =>
+  const years = Array.from(new Set(posts.map(post =>
     new Date(post.created_at).getFullYear()
   ))).toSorted((a, b) => b - a)
 
-  const structuredData = generateBlogListingStructuredData(posts || [])
+  const structuredData = generateBlogListingStructuredData(posts)
 
   return (
     <>
