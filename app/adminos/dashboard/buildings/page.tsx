@@ -29,7 +29,10 @@ export default function BuildingsPage() {
       const transformedBuildings: Building[] = (data || []).map((building) => ({
         ...building,
         external: building.external ?? false,
-        order_index: building.order_index ?? 0
+        order_index: building.order_index ?? 0,
+        url: building.url ?? undefined,
+        created_at: building.created_at ?? undefined,
+        updated_at: building.updated_at ?? undefined
       }))
       
       setBuildings(transformedBuildings)

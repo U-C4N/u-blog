@@ -113,7 +113,10 @@ export default async function Home() {
   const buildings: Building[] = buildingsRaw.map((building) => ({
     ...building,
     external: building.external ?? false,
-    order_index: building.order_index ?? 0
+    order_index: building.order_index ?? 0,
+    url: building.url ?? undefined,
+    created_at: building.created_at ?? undefined,
+    updated_at: building.updated_at ?? undefined
   }))
   const selectedRepos = reposRes.status === 'fulfilled' ? reposRes.value.data || [] : []
   const prompts = promptsRes.status === 'fulfilled' ? promptsRes.value.data || [] : []
