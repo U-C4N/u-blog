@@ -72,11 +72,32 @@ export default function ProfilePage() {
         // social_links'i çıkarıp spread yap, sonra tekrar ekle
         const { social_links: _, ...profileDataWithoutSocialLinks } = profileRes.data
         
+        // null değerleri undefined'a dönüştür (Profile tipi undefined bekliyor)
+        const transformedProfileData: Partial<Profile> = {
+          id: profileDataWithoutSocialLinks.id,
+          name: profileDataWithoutSocialLinks.name,
+          title: profileDataWithoutSocialLinks.title,
+          subtitle: profileDataWithoutSocialLinks.subtitle,
+          present_text: profileDataWithoutSocialLinks.present_text || [],
+          github_token: profileDataWithoutSocialLinks.github_token ?? undefined,
+          github_username: profileDataWithoutSocialLinks.github_username ?? undefined,
+          company: profileDataWithoutSocialLinks.company ?? undefined,
+          website_url: profileDataWithoutSocialLinks.website_url ?? undefined,
+          location: profileDataWithoutSocialLinks.location ?? undefined,
+          job_title: profileDataWithoutSocialLinks.job_title ?? undefined,
+          meta_description: profileDataWithoutSocialLinks.meta_description ?? undefined,
+          meta_keywords: profileDataWithoutSocialLinks.meta_keywords ?? undefined,
+          og_image_url: profileDataWithoutSocialLinks.og_image_url ?? undefined,
+          twitter_card_type: profileDataWithoutSocialLinks.twitter_card_type ?? undefined,
+          created_at: profileDataWithoutSocialLinks.created_at ?? undefined,
+          updated_at: profileDataWithoutSocialLinks.updated_at ?? undefined,
+        }
+        
         setProfile({
           ...defaultProfile,
-          ...profileDataWithoutSocialLinks,
+          ...transformedProfileData,
           social_links: socialLinks,
-          meta_keywords: profileRes.data.meta_keywords || []
+          meta_keywords: profileRes.data.meta_keywords ?? []
         });
       }
 
@@ -91,7 +112,17 @@ export default function ProfilePage() {
         updated_at: building.updated_at ?? undefined
       }))
       setBuildings(transformedBuildings);
-      setGithubRepos(reposRes.data || []);
+      
+      // Veritabanından gelen nullable değerleri GithubRepo tipine uygun hale getir
+      const reposRaw = reposRes.data || []
+      const transformedRepos: GithubRepo[] = reposRaw.map((repo) => ({
+        ...repo,
+        description: repo.description ?? undefined,
+        selected: repo.selected ?? false,
+        created_at: repo.created_at ?? undefined,
+        updated_at: repo.updated_at ?? undefined
+      }))
+      setGithubRepos(transformedRepos);
     } catch (err) {
       setError('Failed to load data');
     }

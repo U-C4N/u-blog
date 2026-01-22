@@ -11,12 +11,12 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const supabase = getSupabaseBrowser()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const checkAuth = async () => {
+      const supabase = getSupabaseBrowser()
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
@@ -26,21 +26,21 @@ export default function DashboardLayout({
 
       setIsAuthenticated(true)
       setIsLoading(false)
+
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!session) {
+          router.push('/adminos/login')
+        }
+      })
+
+      return () => {
+        subscription.unsubscribe()
+      }
     }
 
     checkAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        router.push('/adminos/login')
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [router, supabase])
+  }, [router])
 
   if (isLoading) {
     return (

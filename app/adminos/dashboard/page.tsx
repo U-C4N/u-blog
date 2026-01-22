@@ -9,12 +9,12 @@ import { getSupabaseBrowser } from '@/lib/supabase/config'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const supabase = getSupabaseBrowser()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
+      const supabase = getSupabaseBrowser()
       await supabase.auth.signOut()
       router.push('/adminos/login')
       router.refresh()

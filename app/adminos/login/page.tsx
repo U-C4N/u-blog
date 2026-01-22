@@ -7,20 +7,20 @@ import { getSupabaseBrowser } from '@/lib/supabase/config'
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = getSupabaseBrowser()
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   // Check if already logged in
   useEffect(() => {
     const checkAuth = async () => {
+      const supabase = getSupabaseBrowser()
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         router.push('/adminos/dashboard')
       }
     }
     checkAuth()
-  }, [router, supabase])
+  }, [router])
 
   const handleSubmit = async () => {
     setIsLoading(true)
@@ -40,6 +40,7 @@ export default function LoginPage() {
 
     try {
       // Use Supabase Auth for login
+      const supabase = getSupabaseBrowser()
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,

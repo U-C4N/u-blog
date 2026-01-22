@@ -1,15 +1,17 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2, Link as LinkIcon, ImagePlus, EyeOff, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getSupabaseBrowser } from '../../../../../lib/supabase/config'
+import type { Database } from '../../../../../lib/supabase/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export default function NewPostPage() {
   const router = useRouter()
-  const supabase = getSupabaseBrowser()
+  const [supabase, setSupabase] = useState<SupabaseClient<Database> | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isPublished, setIsPublished] = useState(false)
@@ -46,6 +48,7 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) return
     setIsSaving(true)
     setError(null)
 
@@ -111,7 +114,7 @@ export default function NewPostPage() {
   }
 
   const handleImageUpload = useCallback(async (file: File) => {
-    if (!file) return
+    if (!file || !supabase) return
     
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -178,10 +181,10 @@ export default function NewPostPage() {
     } finally {
       setIsUploading(false)
     }
-  }, [content]);
+  }, [content, supabase]);
 
   const handleAudioUpload = useCallback(async (file: File) => {
-    if (!file) return
+    if (!file || !supabase) return
     
     // Validate file type
     const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg']
@@ -248,10 +251,10 @@ export default function NewPostPage() {
     } finally {
       setIsAudioUploading(false)
     }
-  }, [content]);
+  }, [content, supabase]);
 
   const handleOgImageUpload = useCallback(async (file: File) => {
-    if (!file) return
+    if (!file || !supabase) return
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)')
@@ -283,7 +286,7 @@ export default function NewPostPage() {
     } finally {
       setIsUploading(false)
     }
-  }, [])
+  }, [supabase])
 
   const handleSEOGenerate = useCallback(async () => {
     if (!title || !content) {

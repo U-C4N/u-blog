@@ -20,7 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
     subtitle: 'Software Engineer ~ AI Master\'s Student',
     meta_description: 'Software Engineer and AI Master\'s Student. Personal website and blog.',
     og_image_url: '',
-    twitter_card_type: 'summary_large_image'
+    twitter_card_type: 'summary_large_image',
+    meta_keywords: []
   }
 
   const title = `${profile.name} - ${profile.subtitle} | U-BLOG`
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    keywords: profile.meta_keywords || [],
+    keywords: (profile.meta_keywords as string[] | null) || [],
     openGraph: {
       type: 'website',
       url: env.NEXT_PUBLIC_SITE_URL,
@@ -97,7 +98,7 @@ export default async function Home() {
   ])
 
   // Extract data with fallbacks
-  const profile = profileRes.status === 'fulfilled' && profileRes.value.data
+  const profile: Profile = profileRes.status === 'fulfilled' && profileRes.value.data
     ? (() => {
         // social_links tipini kontrol et ve dönüştür
         let socialLinks = { twitter: '', linkedin: '', github: '' }
@@ -113,9 +114,26 @@ export default async function Home() {
         // social_links'i çıkarıp spread yap, sonra tekrar ekle
         const { social_links: _, ...profileDataWithoutSocialLinks } = profileRes.value.data
         
+        // null değerleri undefined'a dönüştür (Profile tipi undefined bekliyor)
         return {
-          ...profileDataWithoutSocialLinks,
-          social_links: socialLinks
+          id: profileDataWithoutSocialLinks.id,
+          name: profileDataWithoutSocialLinks.name,
+          title: profileDataWithoutSocialLinks.title,
+          subtitle: profileDataWithoutSocialLinks.subtitle,
+          present_text: profileDataWithoutSocialLinks.present_text || [],
+          social_links: socialLinks,
+          github_token: profileDataWithoutSocialLinks.github_token ?? undefined,
+          github_username: profileDataWithoutSocialLinks.github_username ?? undefined,
+          company: profileDataWithoutSocialLinks.company ?? undefined,
+          website_url: profileDataWithoutSocialLinks.website_url ?? undefined,
+          location: profileDataWithoutSocialLinks.location ?? undefined,
+          job_title: profileDataWithoutSocialLinks.job_title ?? undefined,
+          meta_description: profileDataWithoutSocialLinks.meta_description ?? undefined,
+          meta_keywords: profileDataWithoutSocialLinks.meta_keywords ?? undefined,
+          og_image_url: profileDataWithoutSocialLinks.og_image_url ?? undefined,
+          twitter_card_type: profileDataWithoutSocialLinks.twitter_card_type ?? undefined,
+          created_at: profileDataWithoutSocialLinks.created_at ?? undefined,
+          updated_at: profileDataWithoutSocialLinks.updated_at ?? undefined,
         }
       })()
     : defaultProfile

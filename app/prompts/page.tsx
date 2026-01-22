@@ -22,7 +22,14 @@ export default function PromptsPage() {
           .order('created_at', { ascending: false });
 
         if (data) {
-          setPrompts(data);
+          // null değerleri undefined'a dönüştür (Prompt tipi undefined bekliyor)
+          const transformedPrompts: Prompt[] = data.map((prompt) => ({
+            ...prompt,
+            image_url: prompt.image_url ?? undefined,
+            created_at: prompt.created_at ?? undefined,
+            updated_at: prompt.updated_at ?? undefined,
+          }));
+          setPrompts(transformedPrompts);
         }
       } catch (error) {
         console.error('Error fetching prompts:', error);

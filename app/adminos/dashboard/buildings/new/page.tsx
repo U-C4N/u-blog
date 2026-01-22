@@ -11,7 +11,6 @@ export default function NewBuildingPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = getSupabaseBrowser()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -27,6 +26,7 @@ export default function NewBuildingPage() {
     }
 
     try {
+      const supabase = getSupabaseBrowser()
       const { error } = await supabase
         .from('buildings')
         .insert(building)

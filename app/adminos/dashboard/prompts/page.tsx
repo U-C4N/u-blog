@@ -26,10 +26,18 @@ function formatDate(dateString: string) {
 
 export default async function PromptsPage() {
   
-  const { data: prompts } = await supabase
+  const { data: promptsRaw } = await supabase
     .from("prompts")
     .select("*")
     .order("created_at", { ascending: false });
+
+  // null değerleri undefined'a dönüştür (Prompt tipi undefined bekliyor)
+  const prompts: Prompt[] = (promptsRaw || []).map((prompt) => ({
+    ...prompt,
+    image_url: prompt.image_url ?? undefined,
+    created_at: prompt.created_at ?? undefined,
+    updated_at: prompt.updated_at ?? undefined,
+  }));
 
   const totalPrompts = prompts?.length ?? 0;
   const promptsWithImages = prompts?.filter((prompt) => Boolean(prompt.image_url)).length ?? 0;
