@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
-import { supabase } from '@/lib/supabase/config'
+import { notFound } from 'next/navigation'
+import { supabase, type Post } from '@/lib/supabase/config'
 import { EditPostForm } from './edit-post-form'
 
 export const dynamic = 'force-dynamic'
@@ -14,13 +15,23 @@ type Props = {
 }
 
 // React.cache for per-request deduplication (shared between generateMetadata and page)
-const getPost = cache(async (id: string) => {
+const getPost = cache(async (id: string): Promise<Post | null> => {
   const { data } = await supabase
     .from('posts')
     .select('*')
     .eq('id', id)
     .single()
-  return data
+  
+  if (!data) return null
+  
+  // Veritabanından gelen nullable değerleri Post tipine uygun hale getir
+  const transformedPost: Post = {
+    ...data,
+    content: data.content ?? '',
+    published: data.published ?? false
+  }
+  
+  return transformedPost
 })
 
 export async function generateStaticParams() {
@@ -48,6 +59,10 @@ export default async function Page({ params }: Props) {
   const resolvedParams = await params
   // Use cached getPost - same request as generateMetadata won't re-fetch
   const post = await getPost(resolvedParams.id)
+
+  if (!post) {
+    notFound()
+  }
 
   return <EditPostForm initialPost={post} />
 }
