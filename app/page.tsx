@@ -48,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // For data fetching
-export const revalidate = 3600 // Revalidate every hour
+export const revalidate = 60 // Revalidate every minute
 
 function truncateDescription(description: string, maxLength: number = 150): string {
   if (!description) return '';
