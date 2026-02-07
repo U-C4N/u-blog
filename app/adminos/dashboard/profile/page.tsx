@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Save, Plus, Trash2, AlertCircle, Building, Github, Check, User, Globe, Link as LinkIcon, Settings } from 'lucide-react'
 import Link from 'next/link'
-import { supabase, type Profile, type Building as BuildingType, type GithubRepo } from '@/lib/supabase/config'
+import { getSupabaseBrowser, type Profile, type Building as BuildingType, type GithubRepo } from '@/lib/supabase/config'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -19,10 +19,10 @@ const defaultProfile: Profile = {
   id: '123e4567-e89b-12d3-a456-426614174000',
   name: 'Umutcan Edizaslan',
   title: 'MR.Creator',
-  subtitle: 'Software Engineer ~ AI Master\'s Student',
+  subtitle: 'Mechanical Engineer ~ Machine Learning Enthusiast',
   present_text: [
-    'I work as a full-stack engineer at Globant, contributing to Disney O&I Engineering Team.',
-    'I like to build developer tools for myself and make them open source for the community.'
+    'I am a Mechanical Engineer with hands-on experience in CNC machining, lathe operations, and SolidWorks. Currently exploring Machine Learning and AI.',
+    'I am currently working on three projects: DEUZ AI, FIZYO AI, and Mytholox.'
   ],
   social_links: { twitter: '', linkedin: '', github: '' },
   github_token: '',
@@ -32,9 +32,9 @@ const defaultProfile: Profile = {
   og_image_url: '',
   twitter_card_type: 'summary_large_image',
   website_url: '',
-  location: '',
-  company: '',
-  job_title: ''
+  location: 'Turkey',
+  company: 'Deuz AI',
+  job_title: 'Mechanical Engineer'
 }
 
 export default function ProfilePage() {
@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isValidatingToken, setIsValidatingToken] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const supabase = getSupabaseBrowser()
 
   useEffect(() => {
     fetchData()
