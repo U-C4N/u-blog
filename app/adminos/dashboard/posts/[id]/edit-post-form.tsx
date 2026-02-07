@@ -16,6 +16,8 @@ import 'katex/dist/katex.min.css' // KaTeX CSS
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import dynamic from 'next/dynamic'
+import { SerpPreview } from '@/components/serp-preview'
+import { SeoSuggestions } from '@/components/seo-suggestions'
 
 // Hoisted regex patterns (created once, reused everywhere)
 const SLUG_PATTERN = /[^a-z0-9]+/g
@@ -501,7 +503,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <form onSubmit={handleSubmit} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm mb-8">
+        <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border border-white/40 dark:border-gray-700/40 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] mb-8">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <Link 
@@ -580,7 +582,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+          <div className="bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm border border-red-200/50 dark:border-red-800/50 rounded-xl p-4 mb-6">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <div>
@@ -593,7 +595,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2 space-y-6">
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -616,7 +618,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                             value={customSlug}
                             onChange={handleSlugChange}
                             placeholder="url-slug-buraya-gelecek"
-                            className="flex-1 px-3 py-2 bg-background/50 border border-border/50 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-200"
+                            className="flex-1 px-3 py-2 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all duration-200"
                           />
                           {isSlugTouched && (
                             <button
@@ -650,7 +652,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                   </button>
                 </div>
                 {showLanguageSelector && (
-                  <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/50 dark:border-purple-700/50 rounded-xl">
+                  <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200/30 dark:border-purple-700/30 rounded-xl">
                     <h4 className="font-semibold text-sm text-purple-900 dark:text-purple-100 mb-3">Language Versions</h4>
                     <div className="flex flex-wrap gap-2 mb-3">
                       {['en', 'tr', 'de', 'fr', 'es'].map((lang) => (
@@ -687,7 +689,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
             </div>
 
             {/* Stats Card */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
               <div className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 text-sm">
@@ -724,7 +726,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
             </div>
 
             {/* Content Editor Card */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
               {isPreview ? (
                 <div className="p-6">
                   <div className="prose prose-lg dark:prose-invert max-w-none">
@@ -765,7 +767,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     }}
                   />
                   
-                  <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-border/50 rounded-lg p-2 shadow-lg">
+                  <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/40 dark:border-gray-600/40 rounded-xl p-2 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
                     <div className="relative">
                       <input
                         type="file"
@@ -835,8 +837,8 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
           {/* Right Column - SEO & Settings */}
           <div className="space-y-6">
             {/* Tags */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/50 dark:border-green-700/50">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/30 dark:border-green-700/30">
                 <h3 className="text-sm font-semibold text-green-800 dark:text-green-200 flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   Content Tags
@@ -848,15 +850,15 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   placeholder="ai, react, nextjs, tutorial"
-                  className="w-full px-3 py-2.5 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/30 transition-all duration-200"
+                  className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/30 transition-all duration-200"
                 />
                 <p className="text-xs text-muted-foreground mt-2">Separate tags with commas</p>
               </div>
             </div>
 
             {/* SEO Settings */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/50 dark:border-blue-700/50">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/30 dark:border-blue-700/30">
                 <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                   SEO Settings
@@ -870,7 +872,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     value={metaTitle}
                     onChange={(e) => setMetaTitle(e.target.value)}
                     placeholder="Custom SEO title"
-                    className="w-full px-3 py-2.5 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200"
                   />
                 </div>
                 <div>
@@ -880,7 +882,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     onChange={(e) => setMetaDescription(e.target.value)}
                     rows={3}
                     placeholder="Brief summary for search engines"
-                    className="w-full px-3 py-2.5 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200 resize-none"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200 resize-none"
                   />
                 </div>
                 <div>
@@ -890,15 +892,15 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     value={canonicalUrl}
                     onChange={(e) => { setCanonicalUrl(e.target.value); setCanonicalTouched(true) }}
                     placeholder="https://.../blog/slug"
-                    className="w-full px-3 py-2.5 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all duration-200"
                   />
                 </div>
               </div>
             </div>
 
             {/* Open Graph Image */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border-b border-pink-200/50 dark:border-pink-700/50">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border-b border-pink-200/30 dark:border-pink-700/30">
                 <h3 className="text-sm font-semibold text-pink-800 dark:text-pink-200 flex items-center gap-2">
                   <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
                   Open Graph Image
@@ -911,7 +913,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     value={ogImageUrl}
                     onChange={(e) => setOgImageUrl(e.target.value)}
                     placeholder="https://.../image.png"
-                    className="flex-1 px-3 py-2.5 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all duration-200"
+                    className="flex-1 px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all duration-200"
                   />
                   <div className="relative">
                     <input
@@ -943,8 +945,8 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
             </div>
 
             {/* Privacy Settings */}
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-border/50 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 border-b border-gray-200/50 dark:border-gray-700/50">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 border-b border-gray-200/30 dark:border-gray-700/30">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                   <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                   Privacy Settings
@@ -967,6 +969,25 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                 <p className="text-xs text-muted-foreground mt-2">When enabled, search engines won&apos;t index this post</p>
               </div>
             </div>
+
+            {/* Google SERP Preview */}
+            <SerpPreview
+              title={title}
+              metaTitle={metaTitle}
+              metaDescription={metaDescription}
+              slug={customSlug || generateSlug(title)}
+              siteUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+            />
+
+            {/* Smart SEO Suggestions */}
+            <SeoSuggestions
+              title={title}
+              content={content}
+              metaTitle={metaTitle}
+              metaDescription={metaDescription}
+              tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
+              currentPostId={initialPost.id}
+            />
           </div>
         </div>
       </form>

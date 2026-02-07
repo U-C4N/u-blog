@@ -1,121 +1,150 @@
-# U-Blog ✨
+# U-Blog
 
-A modern, feature-rich blog platform built with Next.js 14, Supabase, and TypeScript. U-Blog combines powerful content management with a beautiful, minimalist design. Perfect for developers, writers, and creators who want a fast, secure, and customizable blogging platform.
+A modern blog platform built with **Next.js 16**, **React 19**, **Supabase**, and **TypeScript**. Features a markdown editor with live preview, admin dashboard, multi-language support, developer tools, and AI-powered SEO optimization.
 
-### Why U-Blog?
-- 🚀 **Modern Stack**: Built with the latest web technologies
-- 🎨 **Beautiful UI**: Clean, minimalist design with dark mode support
-- ⚡ **Lightning Fast**: Server-side rendering and optimized performance
-- 📱 **Responsive**: Works perfectly on all devices
-- 🔒 **Secure**: Built-in security features and best practices
-- 🎯 **SEO Ready**: Optimized for search engines out of the box
+## Features
 
-## 🚀 Features
-
-### Rich Content Editor
-- 📝 Markdown support with live preview
-- 🎨 Syntax highlighting for code blocks
-- 📸 Image upload with drag & drop
-- 🔄 Auto-save and unsaved changes detection
-- 📊 Rich markdown tables with proper styling
-- 🔍 One-click SEO optimization
+### Content Editor
+- Markdown with live preview (split-pane and tabbed modes)
+- Syntax highlighting for 20+ languages
+- Image and audio upload with Supabase Storage
+- LaTeX math formula rendering (KaTeX)
+- Auto-save with unsaved changes detection
+- Word count, reading time, and content stats
+- DOMPurify sanitization for XSS protection
 
 ### Admin Dashboard
-- 📊 Post management
-- 📱 Responsive design
-- 🔒 Secure authentication
-- 🎯 SEO optimization
+- Post CRUD with publish/draft workflow
+- Profile management (bio, social links, SEO meta)
+- AI prompts collection manager
+- Academic works / projects (buildings) manager
+- GitHub repos integration (select repos to showcase)
+- Multi-language post translations
+
+### SEO
+- Per-post meta title, description, canonical URL, OG image
+- JSON-LD structured data (BlogPosting, Person, BreadcrumbList)
+- OpenGraph and Twitter Card metadata
+- `robots.txt` and `sitemap.xml`
+- A.C.S.I (Auto-Completer SEO Info) - AI-powered meta generation via Groq
+- Google SERP preview in editor
+- Smart SEO suggestions (heading hierarchy, alt text, internal links)
+- Noindex toggle per post
+
+### Developer Tools
+- **GLSL Shader Previewer** - WebGL fragment shader editor with real-time rendering
+- **Three.js Previewer** - 3D scene editor with Monaco code editor
+- **Markdown Preview** - Full-featured markdown editor with responsive layout
 
 ### Security
-- 🛡️ XSS protection
-- 🔐 CSRF protection
-- 🧪 Input sanitization
-- 🚦 Rate limiting
+- Supabase Auth with email/password
+- Row Level Security (RLS) on all tables
+- Input sanitization with DOMPurify
+- Content length validation (10-50,000 chars)
 
-## 🆕 Latest Updates
+## Tech Stack
 
-### August 30, 2025 - 🚀 Developer Tools & Multi-language Support
-- 🛠️ **Advanced Tool Suite**: Added comprehensive developer and productivity tools section
-- 📝 **Markdown Preview Tool**: Full-featured markdown editor with live preview, responsive design (mobile tabs, desktop side-by-side)
-- 🎨 **GLSL Shader Previewer**: WebGL-powered GLSL fragment shader previewer with real-time rendering capabilities
-- 🌐 **Multi-language Post Support**: Complete multi-language post sharing system with language switcher dropdown
-- 📱 **Enhanced Responsive Design**: Improved mobile and desktop layouts across all writing interfaces
-- 🔧 **Content Analysis Tools**: Integrated analysis and optimization tools for better content management
-- 🎯 **Improved Writing UI**: Redesigned writing interface with better user experience and responsive controls
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Runtime | React 19 |
+| Language | TypeScript 5.9 |
+| Database | Supabase (PostgreSQL 15) |
+| Storage | Supabase Storage (`blog-images`, `blog-audio`) |
+| Auth | Supabase Auth |
+| Styling | Tailwind CSS v4 |
+| UI Components | shadcn/ui (Radix UI primitives) |
+| Editor | React MD Editor + Monaco Editor |
+| 3D | Three.js |
+| Math | remark-math + rehype-katex |
+| Animation | Framer Motion |
+| Charts | Recharts |
+| Forms | React Hook Form + Zod |
+| AI | OpenAI SDK, Groq API |
 
-### June 21, 2025 - ✨ Admin Panel Reimagined & SEO Supercharged
-- ✨ **Enhanced Admin Panel**: The admin panel UI has been completely redesigned for a more intuitive and streamlined user experience.
-- ⚙️ **Advanced SEO & Meta Settings**: You can now fine-tune your site's SEO with dedicated meta title, description, and keyword settings for each profile.
+## Getting Started
 
-### June 7, 2025 - LaTeX Mathematical Formula Support
-- ➕ **Mathematical Formula Rendering**: Added support for rendering LaTeX mathematical formulas in blog posts and the editor preview.
-- 📚 **Libraries Used**: Implemented using `remark-math` and `rehype-katex` for robust and accurate formula display.
+### Prerequisites
+- Node.js 18+
+- A [Supabase](https://supabase.com) project
 
-### May 3, 2025 - Major SEO Enhancement
-- 🔍 **Comprehensive SEO Upgrade**: Improved SEO score from 58 to 85/100
-- 🤖 **Technical SEO**: Added robots.txt and sitemap.xml
-- 🔄 **Structured Data**: Implemented JSON-LD for organization, breadcrumbs, and blog posts
-- 📊 **Analytics Integration**: Added Google Analytics 4 with privacy-focused implementation
-- 🔗 **Internal Linking**: New related posts component for better content discovery
-- 📱 **Performance Optimization**: Resource hints, font optimization, and image lazy loading
+### Setup
 
-### Previous Updates
-- ✅ **Enhanced SEO Button**: One-click content optimization with improved support for Turkish language
-- 📊 **Fixed Markdown Tables**: Proper rendering of complex markdown tables with responsive design
-- 🖼️ **Improved Image Upload**: Fixed image upload issues and enhanced user experience
-- 🌐 **Multilingual Support**: Better handling of special characters and non-Latin scripts
-
-## 🛠️ Tech Stack
-
-- **Framework:** Next.js 14
-- **Database:** Supabase
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Editor:** React MD Editor
-- **Storage:** Supabase Storage
-
-## 🚦 Getting Started
-
-1. Clone the repository:
 ```bash
 git clone https://github.com/U-C4N/u-blog.git
 cd u-blog
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env.local
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-## 📝 Environment Variables
+Create `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-## 🤝 Contributing
+Optional:
 
-Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/U-C4N/u-blog/issues).
+```env
+NEXT_PUBLIC_DEEPSEEK_API_KEY=<for-ai-features>
+TAVILY_API_KEY=<server-side-search>
+GROQ_API_KEY=<for-acsi-seo-tool>
+```
 
-## 📜 License
+### Run
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+npm run dev      # Development server
+npm run build    # Production build
+npm run start    # Production server
+npm run lint     # ESLint
+```
 
-## 🙏 Acknowledgments
+## Project Structure
 
-- [Next.js](https://nextjs.org/)
-- [Supabase](https://supabase.io/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [React MD Editor](https://uiwjs.github.io/react-md-editor/)
+```
+app/
+  adminos/           # Admin panel (auth-protected)
+    dashboard/
+      posts/         # Post CRUD (list, new, edit)
+      profile/       # Profile settings
+      prompts/       # AI prompts manager
+      buildings/     # Projects manager
+    login/           # Admin login
+  blog/[slug]/       # Public blog post pages
+  tags/              # Tag-based filtering
+  tools/             # Developer tools (GLSL, Three.js, Markdown)
+  api/               # API routes
+components/
+  ui/                # shadcn/ui components
+  serp-preview.tsx   # Google SERP preview widget
+  seo-suggestions.tsx # Smart SEO suggestions panel
+  glsl-editor.tsx    # GLSL shader editor
+  threejs-canvas.tsx # Three.js 3D canvas
+  markdown-preview.tsx
+lib/
+  supabase/          # Client config, types, database types
+  utils.ts           # Utility functions (cn, etc.)
+```
+
+## Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `posts` | Blog posts with SEO fields, translations, tags |
+| `profiles` | User profile, social links, SEO settings |
+| `buildings` | Academic works / projects |
+| `github_repos` | GitHub repositories (selectable for showcase) |
+| `prompts` | AI prompt collection |
+| `visits` | Page visit analytics |
+
+All tables have RLS enabled with appropriate policies for public reads and authenticated writes.
+
+## Contributing
+
+Contributions, issues, and feature requests are welcome! Check the [issues page](https://github.com/U-C4N/u-blog/issues).
+
+## License
+
+MIT - see [LICENSE](LICENSE) for details.

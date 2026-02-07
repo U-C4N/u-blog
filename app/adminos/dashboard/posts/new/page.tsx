@@ -6,6 +6,8 @@ import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2, Link 
 import Link from 'next/link'
 import Image from 'next/image'
 import { getSupabaseBrowser } from '../../../../../lib/supabase/config'
+import { SerpPreview } from '@/components/serp-preview'
+import { SeoSuggestions } from '@/components/seo-suggestions'
 
 export default function NewPostPage() {
   const router = useRouter()
@@ -312,251 +314,349 @@ export default function NewPostPage() {
   }, [title, content])
 
   return (
-    <main className="max-w-[1000px] mx-auto px-6 py-16">
-      <div className="flex items-center gap-4 mb-8">
-        <Link
-          href="/adminos/dashboard/posts"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Posts
-        </Link>
-        <h1 className="text-2xl font-bold">Create New Post</h1>
-      </div>
-
-      <div className="max-w-3xl">
-        {error && (
-          <div className="flex items-center gap-2 p-4 mb-6 text-sm text-destructive bg-destructive/10 rounded-md">
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-muted-foreground mb-2">
-              Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-              required
-            />
-            {title && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <LinkIcon className="w-3 h-3" />
-                Slug: <span className="font-mono">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-muted-foreground mb-2">
-              Content (Markdown)
-            </label>
-            <div className="flex items-center gap-2 mb-2">
-              
-              <div className="relative">
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleImageUpload(file)
-                    e.target.value = ''
-                  }}
-                />
-                <label
-                  htmlFor="image-upload"
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                >
-                  {isUploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ImageIcon className="w-4 h-4" />
-                  )}
-                  {isUploading ? 'Uploading...' : 'Add Image'}
-                </label>
-              </div>
-              
-              <div className="relative">
-                <input
-                  type="file"
-                  id="audio-upload"
-                  accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) handleAudioUpload(file)
-                    e.target.value = ''
-                  }}
-                />
-                <label
-                  htmlFor="audio-upload"
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isAudioUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                >
-                  {isAudioUploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Music className="w-4 h-4" />
-                  )}
-                  {isAudioUploading ? 'Uploading...' : 'Add Audio'}
-                </label>
-              </div>
-              <button
-                type="button"
-                onClick={handleSEOGenerate}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors disabled:opacity-50"
-                disabled={isSEOGenerating}
-                title="Auto-Completer SEO Info"
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header Bar */}
+      <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/40 dark:border-gray-700/40 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] mb-8">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/adminos/dashboard/posts"
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 hover:gap-3"
               >
-                {isSEOGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                A.C.S.I
+                <ArrowLeft className="w-4 h-4" />
+                Back to Posts
+              </Link>
+              <div className="h-6 w-px bg-border/50" />
+              <h1 className="text-xl font-semibold">Create New Post</h1>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 bg-white/40 dark:bg-gray-800/40 px-3 py-2 rounded-xl border border-white/50 dark:border-gray-600/30">
+                <input
+                  type="checkbox"
+                  id="published"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="w-4 h-4 rounded border-2 border-gray-300 text-green-600 focus:ring-green-500 focus:ring-2"
+                />
+                <label htmlFor="published" className="text-sm font-medium text-foreground">
+                  Publish immediately
+                </label>
+              </div>
+
+              <Link
+                href="/adminos/dashboard/posts"
+                className="px-4 py-2 text-sm font-medium bg-white/40 dark:bg-gray-800/40 border border-white/50 dark:border-gray-600/30 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-200"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                form="new-post-form"
+                disabled={isSaving}
+                className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Create Post
+                  </>
+                )}
               </button>
             </div>
-            <div className="relative">
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={20}
-                className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
-                required
-              />
-              <div className="absolute bottom-2 right-2 text-xs text-muted-foreground space-x-2">
-                <span>{stats.words} words</span>
-                <span>•</span>
-                <span>{stats.readingTime} min read</span>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm border border-red-200/50 dark:border-red-800/50 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+          </div>
+        </div>
+      )}
+
+      <form id="new-post-form" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          {/* Main Content Column */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Title Card */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="p-6">
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter your post title..."
+                  className="w-full text-3xl sm:text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 text-foreground"
+                  required
+                />
+                {title && (
+                  <div className="mt-3 text-xs text-muted-foreground flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3" />
+                    <span className="opacity-60">{typeof window !== 'undefined' ? window.location.origin : ''}/blog/</span>
+                    <span className="font-mono text-foreground">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="published"
-              checked={isPublished}
-              onChange={(e) => setIsPublished(e.target.checked)}
-              className="rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <label htmlFor="published" className="text-sm text-muted-foreground">
-              Publish immediately
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Tags (comma-separated)</label>
-              <input
-                type="text"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="ai, react, nextjs"
-                className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Title</label>
-              <input
-                type="text"
-                value={metaTitle}
-                onChange={(e) => setMetaTitle(e.target.value)}
-                placeholder="Custom SEO title (optional)"
-                className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Description</label>
-              <textarea
-                value={metaDescription}
-                onChange={(e) => setMetaDescription(e.target.value)}
-                rows={3}
-                placeholder="Brief summary for search engines"
-                className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Canonical URL</label>
-              <input
-                type="url"
-                value={canonicalUrl}
-                onChange={(e) => { setCanonicalUrl(e.target.value); setCanonicalTouched(true) }}
-                placeholder="https://your-domain.com/blog/my-post"
-                className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">Open Graph Image URL</label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={ogImageUrl}
-                  onChange={(e) => setOgImageUrl(e.target.value)}
-                  placeholder="https://.../image.png"
-                  className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="og-upload"
-                    accept="image/jpeg,image/png,image/gif,image/webp"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleOgImageUpload(file)
-                      e.target.value = ''
-                    }}
-                  />
-                  <label
-                    htmlFor="og-upload"
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-transparent text-muted-foreground rounded-md hover:bg-muted transition-colors cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-                    {isUploading ? 'Uploading...' : 'Upload'}
-                  </label>
+            {/* Stats Bar */}
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-xl px-6 py-3">
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium">{stats.words} words</span>
+                </div>
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">{stats.readingTime} min read</span>
                 </div>
               </div>
-              {ogImageUrl && (
-                <Image src={ogImageUrl} alt="OG preview" width={200} height={96} className="mt-2 h-24 rounded border object-cover" />
-              )}
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="noindex"
-                checked={noindex}
-                onChange={(e) => setNoindex(e.target.checked)}
-                className="rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="noindex" className="text-sm text-muted-foreground inline-flex items-center gap-1">
-                <EyeOff className="w-4 h-4" /> Noindex this post
-              </label>
+
+            {/* Content Editor Card */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="relative">
+                {/* Toolbar */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-white/30 dark:border-gray-700/30 bg-white/40 dark:bg-gray-800/40">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file)
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-200 cursor-pointer font-medium ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {isUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4" />
+                      )}
+                      {isUploading ? 'Uploading...' : 'Image'}
+                    </label>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="audio-upload"
+                      accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleAudioUpload(file)
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor="audio-upload"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-100/80 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all duration-200 cursor-pointer font-medium ${isAudioUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {isAudioUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Music className="w-4 h-4" />
+                      )}
+                      {isAudioUploading ? 'Uploading...' : 'Audio'}
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSEOGenerate}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-sm bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-900/30 dark:to-yellow-900/30 text-orange-700 dark:text-orange-300 rounded-lg hover:from-orange-200 hover:to-yellow-200 dark:hover:from-orange-900/50 dark:hover:to-yellow-900/50 transition-all duration-200 disabled:opacity-50 font-medium"
+                    disabled={isSEOGenerating}
+                    title="Auto-Complete SEO Info"
+                  >
+                    {isSEOGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    A.C.S.I
+                  </button>
+                </div>
+
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows={24}
+                  className="w-full px-6 py-4 bg-transparent border-none focus:outline-none focus:ring-0 font-mono text-sm resize-none"
+                  placeholder="Write your content in Markdown..."
+                  required
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4">
-            <Link
-              href="/adminos/dashboard/posts"
-              className="px-4 py-2 border rounded-md hover:bg-muted transition-colors"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Creating...' : 'Create Post'}
-            </button>
+          {/* Sidebar Column */}
+          <div className="space-y-6">
+            {/* Tags */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-green-200/30 dark:border-green-700/30">
+                <h3 className="text-sm font-semibold text-green-800 dark:text-green-200 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Content Tags
+                </h3>
+              </div>
+              <div className="p-4">
+                <input
+                  type="text"
+                  value={tagsInput}
+                  onChange={(e) => setTagsInput(e.target.value)}
+                  placeholder="ai, react, nextjs"
+                  className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/30 backdrop-blur-sm transition-all duration-200"
+                />
+                <p className="text-xs text-muted-foreground mt-2">Separate tags with commas</p>
+              </div>
+            </div>
+
+            {/* SEO Settings */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200/30 dark:border-blue-700/30">
+                <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  SEO Settings
+                </h3>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Title</label>
+                  <input
+                    type="text"
+                    value={metaTitle}
+                    onChange={(e) => setMetaTitle(e.target.value)}
+                    placeholder="Custom SEO title (optional)"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 backdrop-blur-sm transition-all duration-200"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Meta Description</label>
+                  <textarea
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Brief summary for search engines"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 backdrop-blur-sm transition-all duration-200 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Canonical URL</label>
+                  <input
+                    type="url"
+                    value={canonicalUrl}
+                    onChange={(e) => { setCanonicalUrl(e.target.value); setCanonicalTouched(true) }}
+                    placeholder="https://your-domain.com/blog/my-post"
+                    className="w-full px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 backdrop-blur-sm transition-all duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Open Graph Image */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-pink-50/80 to-rose-50/80 dark:from-pink-900/20 dark:to-rose-900/20 border-b border-pink-200/30 dark:border-pink-700/30">
+                <h3 className="text-sm font-semibold text-pink-800 dark:text-pink-200 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                  Open Graph Image
+                </h3>
+              </div>
+              <div className="p-4">
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="url"
+                    value={ogImageUrl}
+                    onChange={(e) => setOgImageUrl(e.target.value)}
+                    placeholder="https://.../image.png"
+                    className="flex-1 px-3 py-2.5 bg-white/50 dark:bg-gray-800/50 border border-white/60 dark:border-gray-600/40 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 backdrop-blur-sm transition-all duration-200"
+                  />
+                  <div className="relative">
+                    <input
+                      type="file"
+                      id="og-upload"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleOgImageUpload(file)
+                        e.target.value = ''
+                      }}
+                    />
+                    <label
+                      htmlFor="og-upload"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2.5 text-sm bg-pink-100/80 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-xl hover:bg-pink-200 dark:hover:bg-pink-900/50 transition-all duration-200 cursor-pointer font-medium ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                      Upload
+                    </label>
+                  </div>
+                </div>
+                {ogImageUrl && (
+                  <Image src={ogImageUrl} alt="OG preview" width={400} height={128} className="w-full h-32 rounded-xl border border-white/40 dark:border-gray-700/30 object-cover" />
+                )}
+              </div>
+            </div>
+
+            {/* Privacy Settings */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-white/40 dark:border-gray-700/30 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+              <div className="px-4 py-3 bg-gradient-to-r from-gray-50/80 to-slate-50/80 dark:from-gray-900/20 dark:to-slate-900/20 border-b border-gray-200/30 dark:border-gray-700/30">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                  Privacy Settings
+                </h3>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="noindex"
+                    checked={noindex}
+                    onChange={(e) => setNoindex(e.target.checked)}
+                    className="w-4 h-4 rounded border-2 border-gray-300 text-gray-600 focus:ring-gray-500 focus:ring-2"
+                  />
+                  <label htmlFor="noindex" className="text-sm font-medium text-foreground inline-flex items-center gap-2">
+                    <EyeOff className="w-4 h-4 text-gray-500" />
+                    Hide from search engines (noindex)
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">When enabled, search engines won&apos;t index this post</p>
+              </div>
+            </div>
+
+            {/* Google SERP Preview */}
+            <SerpPreview
+              title={title}
+              metaTitle={metaTitle}
+              metaDescription={metaDescription}
+              slug={title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
+              siteUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+            />
+
+            {/* Smart SEO Suggestions */}
+            <SeoSuggestions
+              title={title}
+              content={content}
+              metaTitle={metaTitle}
+              metaDescription={metaDescription}
+              tags={tagsInput.split(',').map(t => t.trim()).filter(Boolean)}
+            />
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </main>
   )
 }
