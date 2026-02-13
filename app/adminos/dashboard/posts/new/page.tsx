@@ -103,6 +103,11 @@ export default function NewPostPage() {
         fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${baseUrl}/sitemap.xml`)}`)
       } catch {}
 
+      // Revalidate blog pages so new post appears immediately
+      try {
+        fetch('/api/revalidate', { method: 'POST' })
+      } catch {}
+
       router.push('/adminos/dashboard/posts')
       router.refresh()
     } catch (err: any) {

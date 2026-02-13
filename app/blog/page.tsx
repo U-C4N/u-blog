@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { supabase, type Post } from '@/lib/supabase/config'
 import { env } from '@/env.mjs'
 
-export const revalidate = 3600 // Revalidate every hour
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Blog',
