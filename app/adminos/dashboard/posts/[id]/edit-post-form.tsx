@@ -227,13 +227,16 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       }
 
       console.log('Update response:', data)
-      try {
-        fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${window.location.origin}/sitemap.xml`)}`)
-      } catch {}
-      // Revalidate blog pages so updated post appears immediately
-      try {
-        fetch('/api/revalidate', { method: 'POST' })
-      } catch {}
+      // Ping Google sitemap & revalidate blog pages (fire-and-forget)
+      const session = await supabase.auth.getSession()
+      const accessToken = session.data.session?.access_token
+      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${window.location.origin}/sitemap.xml`)}`).catch(() => {})
+      if (accessToken) {
+        fetch('/api/revalidate', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).catch(() => {})
+      }
       router.refresh()
       router.push('/adminos/dashboard/posts')
     } catch (err: any) {

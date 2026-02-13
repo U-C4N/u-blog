@@ -366,6 +366,9 @@ export function SeoSuggestions({ title, content, metaTitle, metaDescription, tag
   const [relatedPosts, setRelatedPosts] = useState<RelatedPost[]>([])
   const [loadingPosts, setLoadingPosts] = useState(false)
 
+  // Stable serialization for tags array
+  const tagsKey = tags.join(',')
+
   // Fetch related posts for internal linking suggestions
   useEffect(() => {
     if (tags.length === 0 && !title) return
@@ -385,7 +388,7 @@ export function SeoSuggestions({ title, content, metaTitle, metaDescription, tag
           const scored = data
             .filter(p => p.id !== currentPostId)
             .map(p => {
-              const postTags: string[] = (p.tags as string[]) || []
+              const postTags: string[] = Array.isArray(p.tags) ? p.tags : []
               const overlap = postTags.filter(t => tags.includes(t)).length
               // Also check title keyword overlap
               const titleKeywords = extractKeywords(title)
@@ -408,7 +411,8 @@ export function SeoSuggestions({ title, content, metaTitle, metaDescription, tag
 
     const timeout = setTimeout(fetchRelated, 500)
     return () => clearTimeout(timeout)
-  }, [tags.join(','), title, currentPostId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagsKey, title, currentPostId])
 
   const checks = useMemo(() => {
     const all: SeoCheck[] = [
@@ -418,7 +422,8 @@ export function SeoSuggestions({ title, content, metaTitle, metaDescription, tag
       ...analyzeKeywords(content, title, metaTitle, metaDescription, tags),
     ]
     return all
-  }, [content, title, metaTitle, metaDescription, tags.join(',')])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, title, metaTitle, metaDescription, tagsKey])
 
   // Link suggestions check
   const linkChecks = useMemo((): SeoCheck[] => {

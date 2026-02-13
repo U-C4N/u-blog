@@ -98,15 +98,16 @@ export default function NewPostPage() {
 
       if (error) throw error
 
-      // Fire-and-forget ping to Google for sitemap refresh
-      try {
-        fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${baseUrl}/sitemap.xml`)}`)
-      } catch {}
-
-      // Revalidate blog pages so new post appears immediately
-      try {
-        fetch('/api/revalidate', { method: 'POST' })
-      } catch {}
+      // Ping Google sitemap & revalidate blog pages (fire-and-forget)
+      const session = await supabase.auth.getSession()
+      const accessToken = session.data.session?.access_token
+      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${baseUrl}/sitemap.xml`)}`).catch(() => {})
+      if (accessToken) {
+        fetch('/api/revalidate', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }).catch(() => {})
+      }
 
       router.push('/adminos/dashboard/posts')
       router.refresh()
