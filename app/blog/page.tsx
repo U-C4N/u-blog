@@ -93,64 +93,96 @@ export default async function BlogPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <main className="max-w-[1000px] mx-auto px-6 py-16">
-        <div className="max-w-[650px]">
-          <div className="mb-12">
+      <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="max-w-[700px]">
+          {/* Header */}
+          <div className="mb-14 animate-fade-in-up stagger-1">
             <Link 
               href="/" 
-              className="inline-flex items-center gap-2 text-[15px] text-muted-foreground hover:text-foreground transition-colors mb-8"
+              className="inline-flex items-center gap-2 text-[15px] text-muted-foreground hover:text-foreground transition-all duration-200 mb-8 group"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
               Index
             </Link>
             
-            <h1 className="text-[22px] font-medium mb-2">Writing</h1>
+            <h1 className="text-[24px] font-semibold mb-2 tracking-tight">Writing</h1>
             <p className="text-[15px] text-muted-foreground">
               Thoughts on technology, design, and life
             </p>
           </div>
 
           {posts?.length === 0 ? (
-            <p className="text-muted-foreground">No posts yet.</p>
+            <div className="animate-fade-in-up stagger-2 flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-3 h-3 gradient-dot rounded-full mb-4 opacity-40" />
+              <p className="text-muted-foreground text-[15px]">No posts yet.</p>
+            </div>
           ) : (
-            <div className="space-y-12">
-              {years.map(year => (
-                <section key={year}>
-                  <h2 className="text-[17px] font-medium mb-6">{year}</h2>
-                  <div className="space-y-4">
-                    {posts
-                      .filter(post => new Date(post.created_at).getFullYear() === year)
-                      .map(post => (
-                        <div key={post.id} className="flex items-baseline justify-between gap-8 blog-post-item">
-                          <Link 
-                            href={`/blog/${post.slug}`}
-                            className="text-[15px] hover:underline"
-                          >
-                            {post.title}
-                          </Link>
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="flex gap-2 mr-auto ml-4">
-                              {post.tags.slice(0,2).map((tag: string) => (
-                                <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className="text-xs px-2 py-0.5 rounded bg-muted hover:bg-muted/80">#{tag}</Link>
-                              ))}
+            <div className="animate-fade-in-up stagger-2">
+              <div className="space-y-14">
+                {years.map((year, yearIndex) => {
+                  const yearPosts = posts.filter(post => new Date(post.created_at).getFullYear() === year)
+                  return (
+                    <section 
+                      key={year} 
+                      className={`relative animate-fade-in-up stagger-${Math.min(yearIndex + 2, 8)}`}
+                    >
+                      {/* Year marker — big gradient dot with line down to posts */}
+                      <div className="relative flex items-center gap-4 mb-5">
+                        <div className="absolute left-[7px] top-[15px] bottom-0 w-px bg-border" />
+                        <div className="w-[15px] h-[15px] gradient-dot rounded-full border-[3px] border-background shadow-sm z-10 shrink-0" />
+                        <h2 className="text-[17px] font-semibold tracking-tight">{year}</h2>
+                        <div className="flex-1 h-px bg-border/50" />
+                      </div>
+
+                      {/* Posts — continuous line clipped at last dot */}
+                      <div className="relative space-y-1">
+                        <div className="absolute left-[7px] top-0 bottom-[18px] w-px bg-border" />
+                        {yearPosts.map((post, postIndex) => (
+                          <div key={post.id} className="relative group blog-post-item">
+                            {/* Post dot */}
+                            <div className="absolute left-[3px] top-[18px] w-[9px] h-[9px] rounded-full bg-foreground/70 border-2 border-background z-10 transition-all duration-300 group-hover:scale-[1.6] group-hover:bg-foreground" />
+
+                            {/* Post content */}
+                            <div className="ml-8">
+                              <Link 
+                                href={`/blog/${post.slug}`}
+                                className="block p-3 -mx-3 rounded-lg hover:bg-muted/40 transition-colors duration-200"
+                              >
+                                <div className="flex items-baseline justify-between gap-4">
+                                  <span className="text-[15px] font-medium leading-snug">
+                                    {post.title}
+                                  </span>
+                                  <time 
+                                    dateTime={post.created_at}
+                                    className="text-[13px] text-muted-foreground whitespace-nowrap shrink-0"
+                                  >
+                                    {new Date(post.created_at).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </time>
+                                </div>
+                                {post.tags && post.tags.length > 0 && (
+                                  <div className="flex gap-1.5 mt-2">
+                                    {post.tags.slice(0, 2).map((tag: string) => (
+                                      <span 
+                                        key={tag} 
+                                        className="text-[11px] px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground"
+                                      >
+                                        #{tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </Link>
                             </div>
-                          )}
-                          <time 
-                            dateTime={post.created_at}
-                            className="text-[15px] text-muted-foreground whitespace-nowrap"
-                          >
-                            {new Date(post.created_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </time>
-                        </div>
-                      ))
-                    }
-                  </div>
-                </section>
-              ))}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>

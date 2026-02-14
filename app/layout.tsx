@@ -1,12 +1,12 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Outfit } from 'next/font/google'
 import { Background } from '@/components/background'
 import { Providers } from '@/components/providers'
 import { Analytics } from '@/components/analytics'
 import { env } from '@/env.mjs'
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ['latin'],
   display: 'swap',
 })
@@ -81,7 +81,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className={`${inter.className} bg-background/80 text-foreground antialiased min-h-screen`}>
+      <body className={`${outfit.className} bg-background/80 text-foreground antialiased min-h-screen`}>
         <Background />
         <Providers>
           {children}

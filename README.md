@@ -1,4 +1,4 @@
-# U-Blog
+# U-Blog v0.2.0
 
 A modern blog platform built with **Next.js 16**, **React 19**, **Supabase**, and **TypeScript**. Features a markdown editor with live preview, admin dashboard, multi-language support, developer tools, and AI-powered SEO optimization.
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Code2, Twitter, Linkedin, Github, Copy, Check, ExternalLink, Star } from 'lucide-react'
+import { Code2, Twitter, Linkedin, Github, Copy, Check, ExternalLink, Star, Sparkles, BookOpen, Wrench, PenLine } from 'lucide-react'
 import { ProjectLink } from '@/components/project-link'
 import { Section } from '@/components/section'
 import { supabase, type Profile, type Building, type GithubRepo, type Prompt } from '@/lib/supabase/config'
@@ -178,17 +178,20 @@ export default async function Home() {
       />
       <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-20">
         <header className="mb-12 sm:mb-20">
-          {/* Mobile: Stacked layout, Desktop: Float layout */}
-          <div className="block sm:flow-root">
-            <div className="flex flex-col sm:block">
-              <Image
-                src="/hope.png"
-                alt="Umutcan Edizaslan"
-                width={140}
-                height={140}
-                className="rounded-lg mx-auto sm:float-right sm:ml-6 mb-6 w-24 h-24 sm:w-[140px] sm:h-[140px]"
-              />
-              <div className="text-center sm:text-left">
+          <div>
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-8 sm:mb-10">
+              <div className="relative shrink-0 group cursor-pointer">
+                {/* Hover blur overlay on the page */}
+                <div className="fixed inset-0 bg-black/5 backdrop-blur-[6px] opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none z-40" />
+                <Image
+                  src="/hope.png"
+                  alt="Umutcan Edizaslan"
+                  width={130}
+                  height={150}
+                  className="relative z-50 w-[90px] sm:w-[120px] h-auto transition-all duration-500 group-hover:brightness-110 group-hover:scale-105 group-hover:drop-shadow-[0_0_25px_rgba(255,255,255,0.7)]"
+                />
+              </div>
+              <div className="text-center sm:text-left flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-3">
                   <h1 className="text-xl sm:text-[24px] font-medium tracking-tight">{profile.name}</h1>
                   <span className="hidden sm:inline text-[24px] text-muted-foreground">~</span>
@@ -197,7 +200,7 @@ export default async function Home() {
                     <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                   </div>
                 </div>
-                <h2 className="text-base sm:text-[20px] text-muted-foreground font-normal mb-6 sm:mb-10">{profile.subtitle}</h2>
+                <h2 className="text-base sm:text-[20px] text-muted-foreground font-normal">{profile.subtitle}</h2>
               </div>
             </div>
             <div className="space-y-4 sm:space-y-5 clear-both">
@@ -214,14 +217,13 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 md:gap-20 border-t border-border/30 pt-8 sm:pt-12 md:pt-20">
           <Section title="Academic Works">
             {buildings.map((building) => (
-              <div key={building.id} className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
-                <ProjectLink
-                  href="#"
-                  title={building.title}
-                  description={building.description}
-                  external={building.external}
-                />
-              </div>
+              <ProjectLink
+                key={building.id}
+                href="#"
+                title={building.title}
+                description={building.description}
+                external={building.external}
+              />
             ))}
           </Section>
 
@@ -268,44 +270,48 @@ export default async function Home() {
           </Section>
 
           <Section title="Explore">
-            <div className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
-              <ProjectLink
-                href="/blog"
-                title="Writing"
-                description="Thoughts on technology, design, and life"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200">
-                  <ProjectLink
-                    href="/prompts"
-                    title="Prompts"
-                    description="Collection of useful AI prompts"
-                  />
-                </div>
-              </div>
-              {prompts[0] && (
-                <div className="bg-muted/20 p-5 rounded-lg border border-border/40 hover:bg-muted/30 transition-colors duration-200">
-                  <div className="flex justify-between items-start gap-4 mb-3">
-                    <h4 className="font-medium text-sm">{prompts[0].title}</h4>
-                    <CopyButton content={prompts[0].content} />
+            <ProjectLink
+              href="/blog"
+              title="Writing"
+              description="Thoughts on technology, design, and life"
+              icon={<PenLine className="w-4 h-4" />}
+            />
+            <ProjectLink
+              href="/prompts"
+              title="Prompts"
+              description="Collection of useful AI prompts"
+              icon={<Sparkles className="w-4 h-4" />}
+            />
+            {prompts[0] && (
+                <div className="glass-prompt-glow glass-shimmer rounded-2xl p-6 sm:p-7 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-[1px] gradient-line-top" />
+                  <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-sky-300/30 dark:bg-sky-400/15 blur-2xl animate-float pointer-events-none" />
+                  <div className="absolute -bottom-6 -left-6 w-36 h-36 rounded-full bg-violet-300/25 dark:bg-violet-400/12 blur-2xl animate-float-delayed pointer-events-none" />
+                  <div className="relative z-[2]">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <div>
+                        <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground/50 font-medium mb-2 flex items-center gap-1.5">
+                          <Sparkles className="w-3 h-3" />
+                          Featured Prompt
+                        </span>
+                        <h4 className="font-semibold text-base leading-snug">{prompts[0].title}</h4>
+                      </div>
+                      <CopyButton content={prompts[0].content} />
+                    </div>
+                    <p className="text-sm text-muted-foreground/80 leading-relaxed line-clamp-4">
+                      {prompts[0].content}
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {prompts[0].content}
-                  </p>
                 </div>
               )}
-              <div className="hover:bg-muted/30 p-3 -m-3 rounded-lg transition-colors duration-200 mt-4">
-                <ProjectLink
-                  href="/tools"
-                  title="Tools"
-                  description="Useful development and productivity tools"
-                />
-              </div>
-            </div>
+            <ProjectLink
+              href="/tools"
+              title="Tools"
+              description="Useful development and productivity tools"
+              icon={<Wrench className="w-4 h-4" />}
+            />
             <div>
-              <h4 className="font-medium mb-3 text-sm sm:text-[16px]">Social Media</h4>
+              <h4 className="font-medium mb-3 text-xs uppercase tracking-[0.1em] text-muted-foreground/60">Connect</h4>
               <div className="flex items-center gap-2 sm:gap-3">
                 {profile.social_links?.twitter && (
                   <>
@@ -313,13 +319,12 @@ export default async function Home() {
                       href={profile.social_links.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
+                      className="glass-circle w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
                       aria-label="Twitter"
                     >
                       <Twitter className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </Link>
-                    <span className="text-muted-foreground/60">,</span>
-                  </>
+                                      </>
                 )}
                 {profile.social_links?.linkedin && (
                   <>
@@ -327,20 +332,19 @@ export default async function Home() {
                       href={profile.social_links.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
+                      className="glass-circle w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
                       aria-label="LinkedIn"
                     >
                       <Linkedin className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                     </Link>
-                    <span className="text-muted-foreground/60">,</span>
-                  </>
+                                      </>
                 )}
                 {profile.social_links?.github && (
                   <Link
                     href={profile.social_links.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground transition-colors p-1 hover:bg-muted/30 rounded"
+                    className="glass-circle w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground"
                     aria-label="GitHub"
                   >
                     <Github className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
