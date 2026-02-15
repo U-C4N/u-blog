@@ -11,6 +11,16 @@ export interface ToolConfig {
 
 export const TOOLS: ToolConfig[] = [
   {
+    id: 'background-remove',
+    title: 'Background Remover',
+    description: 'Remove image backgrounds automatically in your browser with GPU acceleration and instant transparent PNG export.',
+    href: '/tools/background-remove',
+    iconName: 'Scissors',
+    category: 'Image',
+    tags: ['background remover', 'image', 'ai', 'png'],
+    status: 'active'
+  },
+  {
     id: 'markdown-preview',
     title: 'Markdown Preview',
     description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',

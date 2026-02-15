@@ -2,18 +2,18 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, type LucideIcon } from 'lucide-react'
+import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, Scissors, type LucideIcon } from 'lucide-react'
 import { TOOLS } from '@/lib/tools-config'
 import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
 import { env } from '@/env.mjs'
 
 const title = 'Developer Tools'
-const description = 'Free online developer tools: Markdown preview, GLSL shader editor, Three.js 3D previewer, and more.'
+const description = 'Free online tools: AI background remover, Markdown preview, GLSL shader editor, Three.js 3D previewer, and more.'
 
 export const metadata: Metadata = {
   title: `${title} | U-BLOG`,
   description,
-  keywords: ['developer tools', 'markdown preview', 'GLSL shader editor', 'Three.js previewer', 'online tools', 'web development'],
+  keywords: ['background remover', 'developer tools', 'markdown preview', 'GLSL shader editor', 'Three.js previewer', 'online tools', 'web development'],
   openGraph: {
     type: 'website',
     title: `${title} | U-BLOG`,
@@ -36,6 +36,7 @@ const iconMap: Record<string, LucideIcon> = {
   Palette,
   Calculator,
   Box,
+  Scissors,
 }
 
 export default function ToolsPage() {
