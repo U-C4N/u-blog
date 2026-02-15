@@ -123,7 +123,12 @@ export default function UniformControls({
         {/* Uniform Controls Toggle */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Parameters</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">Parameters</Label>
+              <Badge variant="secondary" className="text-xs">
+                Coming Soon
+              </Badge>
+            </div>
             <Button
               onClick={() => setShowControls(!showControls)}
               size="sm"
@@ -133,9 +138,9 @@ export default function UniformControls({
               {showControls ? 'Hide' : 'Show'}
             </Button>
           </div>
-          
+
           {showControls && (
-            <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-4 pt-2 border-t opacity-50 pointer-events-none">
               {uniforms.map((uniform, index) => (
                 <div key={uniform.name} className="space-y-2">
                   <div className="flex items-center justify-between">

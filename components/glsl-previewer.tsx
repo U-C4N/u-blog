@@ -74,11 +74,30 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 const defaultShader = shaderTemplates[0].code
 
 export default function GLSLPreviewer() {
-  const [shaderCode, setShaderCode] = useState(defaultShader)
+  const [shaderCode, setShaderCode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tool-glsl-code') || defaultShader
+    }
+    return defaultShader
+  })
   const [selectedTemplate, setSelectedTemplate] = useState('basic')
   const [isPlaying, setIsPlaying] = useState(true)
   const [compileError, setCompileError] = useState<string | null>(null)
   const canvasRef = useRef<GLSLCanvasRef>(null)
+
+  // Analytics: track tool view on mount
+  useEffect(() => {
+    const g = (window as unknown as Record<string, unknown>).gtag as ((...args: unknown[]) => void) | undefined
+    g?.('event', 'tool_view', { tool_name: 'glsl-previewer' })
+  }, [])
+
+  // Debounced auto-save to localStorage
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('tool-glsl-code', shaderCode)
+    }, 1000)
+    return () => clearTimeout(timeoutId)
+  }, [shaderCode])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -94,6 +113,8 @@ export default function GLSLPreviewer() {
       setShaderCode(template.code)
       setSelectedTemplate(templateId)
       setCompileError(null)
+      const g = (window as unknown as Record<string, unknown>).gtag as ((...args: unknown[]) => void) | undefined
+      g?.('event', 'template_change', { tool_name: 'glsl-previewer', template_id: templateId })
     }
   }, [])
 
@@ -108,6 +129,25 @@ export default function GLSLPreviewer() {
 
   const handleShaderError = useCallback((error: string) => {
     setCompileError(error)
+  }, [])
+
+  // Keyboard shortcuts: Space = play/pause, R = reset (only when not in editor)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || '').toLowerCase()
+      const isEditing = tag === 'input' || tag === 'textarea' || document.activeElement?.closest('.monaco-editor')
+      if (isEditing) return
+
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setIsPlaying(prev => !prev)
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault()
+        canvasRef.current?.reset()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   return (
@@ -158,9 +198,10 @@ export default function GLSLPreviewer() {
         
         <ResizablePanel defaultSize={50} minSize={30}>
           <div className="h-full flex flex-col">
-            <GLSLCanvas 
+            <GLSLCanvas
               ref={canvasRef}
               fragmentShader={shaderCode}
+              isPlaying={isPlaying}
               className="flex-1 h-full"
             />
           </div>

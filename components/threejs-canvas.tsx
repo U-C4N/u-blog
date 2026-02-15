@@ -1,6 +1,8 @@
 'use client'
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState, useCallback } from 'react'
+// Full namespace import is intentional: THREE is passed to user-provided code via new Function().
+// Tree-shaking is handled at the bundle level by the dynamic import in threejs-canvas-wrapper.tsx (ssr: false).
 import * as THREE from 'three'
 import { cn } from '@/lib/utils'
 
@@ -23,26 +25,51 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
     const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
     const animationRef = useRef<number | null>(null)
     const userObjectsRef = useRef<THREE.Object3D[]>([])
+    const userAnimationFramesRef = useRef<number[]>([])
     const clockRef = useRef<THREE.Clock>(new THREE.Clock())
+    const reducedMotionRef = useRef<boolean>(false)
     const [mounted, setMounted] = useState(false)
+    const [contextLost, setContextLost] = useState(false)
+
+    const disposeObject = useCallback((obj: THREE.Object3D) => {
+      if (obj instanceof THREE.Mesh) {
+        if (obj.geometry) obj.geometry.dispose()
+        if (obj.material) {
+          const materials = Array.isArray(obj.material) ? obj.material : [obj.material]
+          for (const mat of materials) {
+            for (const value of Object.values(mat)) {
+              if (value instanceof THREE.Texture) {
+                value.dispose()
+              }
+            }
+            mat.dispose()
+          }
+        }
+      }
+    }, [])
+
+    const clearUserObjects = useCallback(() => {
+      userAnimationFramesRef.current.forEach(id => cancelAnimationFrame(id))
+      userAnimationFramesRef.current = []
+
+      userObjectsRef.current.forEach(obj => {
+        disposeObject(obj)
+        sceneRef.current?.remove(obj)
+      })
+      userObjectsRef.current = []
+    }, [disposeObject])
 
     const executeUserCode = useCallback((userCode: string) => {
       try {
-        // Clear previous user objects
-        userObjectsRef.current.forEach(obj => {
-          sceneRef.current?.remove(obj)
-        })
-        userObjectsRef.current = []
+        clearUserObjects()
 
         if (!sceneRef.current || !rendererRef.current || !cameraRef.current) return
 
-        // Create a safe execution context
         const scene = sceneRef.current
         const renderer = rendererRef.current
         const camera = cameraRef.current
         const clock = clockRef.current
 
-        // Helper functions for users
         const createMesh = (geometry: THREE.BufferGeometry, material: THREE.Material) => {
           const mesh = new THREE.Mesh(geometry, material)
           userObjectsRef.current.push(mesh)
@@ -56,7 +83,6 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
           return light
         }
 
-        // Execute user code with available Three.js objects
         const func = new Function(
           'THREE',
           'scene',
@@ -68,20 +94,40 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
           userCode
         )
 
-        func(THREE, scene, camera, renderer, clock, createMesh, createLight)
-        onError?.(null)
+        let completed = false
+        const timeoutId = setTimeout(() => {
+          if (!completed) {
+            onError?.('Code execution timed out (>5s). Possible infinite loop.')
+          }
+        }, 5000)
+
+        try {
+          func(THREE, scene, camera, renderer, clock, createMesh, createLight)
+          completed = true
+          clearTimeout(timeoutId)
+          onError?.(null)
+        } catch (execError) {
+          completed = true
+          clearTimeout(timeoutId)
+          throw execError
+        }
       } catch (error) {
         console.error('Three.js code execution error:', error)
         onError?.(error instanceof Error ? error.message : 'Unknown error')
       }
-    }, [onError])
+    }, [onError, clearUserObjects])
 
     const animate = useCallback(() => {
       if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return
 
       try {
         rendererRef.current.render(sceneRef.current, cameraRef.current)
-        animationRef.current = requestAnimationFrame(animate)
+        // If reduced motion is preferred, render one frame then stop
+        if (!reducedMotionRef.current) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          animationRef.current = null
+        }
       } catch (error) {
         console.error('Animation error:', error)
       }
@@ -90,12 +136,7 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
     useImperativeHandle(ref, () => ({
       reset: () => {
         clockRef.current.start()
-        if (sceneRef.current) {
-          userObjectsRef.current.forEach(obj => {
-            sceneRef.current?.remove(obj)
-          })
-          userObjectsRef.current = []
-        }
+        clearUserObjects()
       },
       updateCode: (newCode: string) => {
         executeUserCode(newCode)
@@ -104,6 +145,9 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
 
     useEffect(() => {
       setMounted(true)
+      if (typeof window !== 'undefined') {
+        reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      }
     }, [])
 
     useEffect(() => {
@@ -138,6 +182,24 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
       }
       mountElement.appendChild(renderer.domElement)
       rendererRef.current = renderer
+
+      // Handle WebGL context loss/restore
+      const handleContextLost = (e: Event) => {
+        e.preventDefault()
+        setContextLost(true)
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+          animationRef.current = null
+        }
+      }
+
+      const handleContextRestored = () => {
+        setContextLost(false)
+        animate()
+      }
+
+      renderer.domElement.addEventListener('webglcontextlost', handleContextLost)
+      renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored)
 
       // Add basic lighting
       const ambientLight = new THREE.AmbientLight(0x404040, 0.6)
@@ -174,6 +236,13 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
           cancelAnimationFrame(animationRef.current)
         }
 
+        // Cancel user animation frames
+        userAnimationFramesRef.current.forEach(id => cancelAnimationFrame(id))
+        userAnimationFramesRef.current = []
+
+        renderer.domElement.removeEventListener('webglcontextlost', handleContextLost)
+        renderer.domElement.removeEventListener('webglcontextrestored', handleContextRestored)
+
         renderer.dispose()
         if (renderer.domElement.parentElement === mountElement) {
           mountElement.removeChild(renderer.domElement)
@@ -191,12 +260,25 @@ const ThreeJSCanvas = forwardRef<ThreeJSCanvasRef, ThreeJSCanvasProps>(
     return (
       <div
         ref={mountRef}
+        role="img"
+        aria-label="Three.js 3D scene preview"
         className={cn(
-          "w-full h-full bg-gradient-to-br from-gray-900 to-black rounded-lg overflow-hidden border border-gray-800",
+          "w-full h-full bg-gradient-to-br from-gray-900 to-black rounded-lg overflow-hidden border border-gray-800 relative",
           className
         )}
         style={{ minHeight: '400px' }}
-      />
+      >
+        {contextLost && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+            <div className="text-center p-6 max-w-sm">
+              <p className="text-yellow-400 font-medium mb-2">WebGL Context Lost</p>
+              <p className="text-sm text-gray-400">
+                The browser lost the GPU context. Waiting for automatic recovery...
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     )
   }
 )

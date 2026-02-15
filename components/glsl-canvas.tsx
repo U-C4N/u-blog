@@ -4,8 +4,17 @@ import { useRef, useEffect, useLayoutEffect, forwardRef, useImperativeHandle, us
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
+function humanizeShaderError(error: string): string | null {
+  if (/undeclared identifier/i.test(error)) return 'Tip: Check for typos in variable or function names.'
+  if (/mainImage/i.test(error) && /undefined|undeclared|not found/i.test(error)) return 'Tip: Make sure your shader defines void mainImage(out vec4 fragColor, in vec2 fragCoord).'
+  if (/syntax error/i.test(error)) return 'Tip: Check for missing brackets, semicolons, or parentheses.'
+  if (/type mismatch/i.test(error)) return 'Tip: Make sure your types match (e.g., vec3 vs vec4, float vs int).'
+  return null
+}
+
 interface GLSLCanvasProps {
   fragmentShader: string
+  isPlaying?: boolean
   className?: string
 }
 
@@ -15,13 +24,17 @@ export interface GLSLCanvasRef {
 }
 
 const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
-  ({ fragmentShader, className = '' }, ref) => {
+  ({ fragmentShader, isPlaying = true, className = '' }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const glRef = useRef<WebGLRenderingContext | null>(null)
     const programRef = useRef<WebGLProgram | null>(null)
     const animationRef = useRef<number | undefined>(undefined)
     const startTime = useRef<number>(Date.now())
+    const isPlayingRef = useRef<boolean>(isPlaying)
+    const renderErrorCountRef = useRef<number>(0)
+    const reducedMotionRef = useRef<boolean>(false)
     const [error, setError] = useState<string | null>(null)
+    const [contextLost, setContextLost] = useState(false)
 
     useImperativeHandle(ref, () => ({
       reset: () => {
@@ -29,6 +42,22 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       },
       getCanvas: () => canvasRef.current
     }))
+
+    // Keep isPlayingRef in sync with prop
+    useEffect(() => {
+      isPlayingRef.current = isPlaying
+      // If resuming, restart the animation loop
+      if (isPlaying && programRef.current && glRef.current && !animationRef.current) {
+        render()
+      }
+    }, [isPlaying])
+
+    // Check prefers-reduced-motion on mount
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      }
+    }, [])
 
     const vertexShaderSource = `
       attribute vec2 a_position;
@@ -38,8 +67,6 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
     `
 
     const createShaderProgram = useCallback((gl: WebGLRenderingContext, fragmentSource: string): WebGLProgram | null => {
-      console.log('Creating shader program...')
-      
       // Create and compile vertex shader
       const vertexShader = gl.createShader(gl.VERTEX_SHADER)
       if (!vertexShader) {
@@ -120,14 +147,12 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
         return null
       }
 
-      console.log('Shader program created successfully')
       return program
     }, [vertexShaderSource])
 
     const setupCanvas = useCallback(() => {
       const canvas = canvasRef.current
       if (!canvas) {
-        console.log('Canvas not available')
         return
       }
 
@@ -142,8 +167,6 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
         canvas.height = height
         canvas.style.width = width + 'px'
         canvas.style.height = height + 'px'
-        
-        console.log(`Canvas setup: ${width}x${height}`)
       }
 
       const gl = canvas.getContext('webgl', { 
@@ -172,8 +195,6 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       const buffer = gl.createBuffer()
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
       gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
-      
-      console.log('Canvas setup completed successfully')
     }, [])
 
     const render = useCallback(() => {
@@ -182,22 +203,20 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       const program = programRef.current
 
       if (!canvas || !gl || !program) {
-        console.log('Render aborted: missing components', { 
-          canvas: !!canvas, 
-          gl: !!gl, 
-          program: !!program 
-        })
+        return
+      }
+
+      // Circuit breaker: stop after too many consecutive errors
+      if (renderErrorCountRef.current > 10) {
+        setError('Rendering stopped: too many consecutive errors. Please fix your shader and try again.')
         return
       }
 
       // Skip rendering if canvas has zero size
       if (canvas.width === 0 || canvas.height === 0) {
-        console.log('Render aborted: zero canvas size', { 
-          width: canvas.width, 
-          height: canvas.height 
-        })
-        // Schedule next frame anyway
-        animationRef.current = requestAnimationFrame(render)
+        if (isPlayingRef.current) {
+          animationRef.current = requestAnimationFrame(render)
+        }
         return
       }
 
@@ -211,7 +230,6 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
             canvas.width = displayWidth
             canvas.height = displayHeight
             gl.viewport(0, 0, displayWidth, displayHeight)
-            console.log(`Canvas resized in render: ${displayWidth}x${displayHeight}`)
           }
         }
 
@@ -220,6 +238,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
         const positionLocation = gl.getAttribLocation(program, 'a_position')
         if (positionLocation === -1) {
           console.error('Could not find a_position attribute')
+          renderErrorCountRef.current++
           return
         }
 
@@ -247,29 +266,64 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
         // Check for GL errors
-        const error = gl.getError()
-        if (error !== gl.NO_ERROR) {
-          console.error('WebGL error during render:', error)
+        const glError = gl.getError()
+        if (glError !== gl.NO_ERROR) {
+          console.error('WebGL error during render:', glError)
+          renderErrorCountRef.current++
+        } else {
+          renderErrorCountRef.current = 0
         }
 
-      } catch (error) {
-        console.error('Render error:', error)
+      } catch (err) {
+        console.error('Render error:', err)
+        renderErrorCountRef.current++
       }
 
-      // Schedule next frame
-      animationRef.current = requestAnimationFrame(render)
+      // Schedule next frame only if playing and not reduced motion
+      if (isPlayingRef.current && !reducedMotionRef.current) {
+        animationRef.current = requestAnimationFrame(render)
+      } else {
+        animationRef.current = undefined
+      }
     }, [])
 
     // Setup canvas after component mounts
     useLayoutEffect(() => {
+      const canvas = canvasRef.current
+
+      const handleContextLost = (e: Event) => {
+        e.preventDefault()
+        setContextLost(true)
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current)
+          animationRef.current = undefined
+        }
+        glRef.current = null
+        programRef.current = null
+      }
+
+      const handleContextRestored = () => {
+        setContextLost(false)
+        setupCanvas()
+      }
+
+      if (canvas) {
+        canvas.addEventListener('webglcontextlost', handleContextLost)
+        canvas.addEventListener('webglcontextrestored', handleContextRestored)
+      }
+
       const timer = setTimeout(() => {
         setupCanvas()
       }, 100) // Small delay to ensure DOM is ready
-      
+
       return () => {
         clearTimeout(timer)
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current)
+        }
+        if (canvas) {
+          canvas.removeEventListener('webglcontextlost', handleContextLost)
+          canvas.removeEventListener('webglcontextrestored', handleContextRestored)
         }
       }
     }, [setupCanvas])
@@ -280,17 +334,23 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       if (!canvas) return
 
       const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { width, height } = entry.contentRect
-          if (width > 0 && height > 0) {
-            canvas.width = width
-            canvas.height = height
-            const gl = glRef.current
-            if (gl) {
-              gl.viewport(0, 0, width, height)
-              console.log(`Canvas resized: ${width}x${height}`)
+        try {
+          const currentCanvas = canvasRef.current
+          const gl = glRef.current
+          if (!currentCanvas) return
+
+          for (const entry of entries) {
+            const { width, height } = entry.contentRect
+            if (width > 0 && height > 0) {
+              currentCanvas.width = width
+              currentCanvas.height = height
+              if (gl) {
+                gl.viewport(0, 0, width, height)
+              }
             }
           }
+        } catch {
+          // Ignore ResizeObserver loop errors
         }
       })
 
@@ -309,8 +369,8 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       const gl = glRef.current
       if (!gl || !fragmentShader.trim()) return
 
-      console.log('Compiling new shader...')
       setError(null)
+      renderErrorCountRef.current = 0
       
       // Clean up old program
       if (programRef.current) {
@@ -328,10 +388,7 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       const program = createShaderProgram(gl, fragmentShader)
       if (program) {
         programRef.current = program
-        console.log('Starting render loop...')
         render()
-      } else {
-        console.error('Failed to create shader program')
       }
     }, [fragmentShader, createShaderProgram, render])
 
@@ -352,10 +409,23 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       )
     }
 
+    if (contextLost) {
+      return (
+        <div className={`bg-yellow-950/20 rounded-lg flex items-center justify-center min-h-[300px] ${className}`}>
+          <Alert className="max-w-md">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              WebGL context was lost. The browser may be low on GPU resources. Waiting for recovery...
+            </AlertDescription>
+          </Alert>
+        </div>
+      )
+    }
+
     if (error) {
       return (
         <div className={`bg-red-950/20 rounded-lg flex items-center justify-center min-h-[300px] ${className}`}>
-          <Alert variant="destructive" className="max-w-lg">
+          <Alert variant="destructive" className="max-w-lg" aria-live="assertive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-2">
@@ -363,6 +433,9 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
                 <pre className="text-xs bg-red-900/20 p-2 rounded overflow-auto max-h-32">
                   {error}
                 </pre>
+                {humanizeShaderError(error) && (
+                  <p className="text-xs text-red-200">{humanizeShaderError(error)}</p>
+                )}
                 <p className="text-xs text-red-300">
                   Check the browser console (F12) for more detailed information.
                 </p>
@@ -377,6 +450,8 @@ const GLSLCanvas = forwardRef<GLSLCanvasRef, GLSLCanvasProps>(
       <div className={`relative bg-black rounded-lg overflow-hidden ${className}`}>
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label="GLSL shader preview"
           className="w-full h-full block"
         />
       </div>

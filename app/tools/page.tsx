@@ -2,82 +2,54 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft } from 'lucide-react'
+import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, type LucideIcon } from 'lucide-react'
+import { TOOLS } from '@/lib/tools-config'
+import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
+import { env } from '@/env.mjs'
+
+const title = 'Developer Tools'
+const description = 'Free online developer tools: Markdown preview, GLSL shader editor, Three.js 3D previewer, and more.'
 
 export const metadata: Metadata = {
-  title: 'Tools | U-BLOG',
-  description: 'Useful development and productivity tools',
+  title: `${title} | U-BLOG`,
+  description,
+  keywords: ['developer tools', 'markdown preview', 'GLSL shader editor', 'Three.js previewer', 'online tools', 'web development'],
+  openGraph: {
+    type: 'website',
+    title: `${title} | U-BLOG`,
+    description,
+    url: `${env.NEXT_PUBLIC_SITE_URL}/tools`,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${title} | U-BLOG`,
+    description,
+  },
+  alternates: {
+    canonical: `${env.NEXT_PUBLIC_SITE_URL}/tools`,
+  },
 }
 
-const tools = [
-  {
-    id: 'markdown-preview',
-    title: 'Markdown Preview',
-    description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',
-    href: '/tools/markdown-preview',
-    icon: FileText,
-    category: 'Writing',
-    tags: ['markdown', 'preview', 'writing'],
-    status: 'active' as const
-  },
-  {
-    id: 'glsl-previewer',
-    title: 'GLSL Shader Previewer',
-    description: 'Write and preview GLSL fragment shaders in real-time. Live rendering with WebGL.',
-    href: '/tools/glsl-previewer',
-    icon: Palette,
-    category: 'Graphics',
-    tags: ['glsl', 'shader', 'webgl', 'graphics'],
-    status: 'active' as const
-  },
-  {
-    id: 'threejs-previewer',
-    title: 'Three.js Previewer',
-    description: 'Create and preview 3D scenes with Three.js. Real-time 3D rendering and live code editing.',
-    href: '/tools/threejs-previewer',
-    icon: Box,
-    category: 'Graphics',
-    tags: ['threejs', '3d', 'webgl', 'graphics'],
-    status: 'active' as const
-  },
-  {
-    id: 'code-formatter',
-    title: 'Code Formatter',
-    description: 'Format and beautify your JavaScript, TypeScript, CSS and HTML code.',
-    href: '/tools/code-formatter',
-    icon: Code2,
-    category: 'Development',
-    tags: ['javascript', 'typescript', 'formatting'],
-    status: 'coming-soon' as const
-  },
-  {
-    id: 'color-palette',
-    title: 'Color Palette Generator',
-    description: 'Create beautiful color palettes and get hex codes. Color harmony for your designs.',
-    href: '/tools/color-palette',
-    icon: Palette,
-    category: 'Design',
-    tags: ['colors', 'design', 'palette'],
-    status: 'coming-soon' as const
-  },
-  {
-    id: 'unit-converter',
-    title: 'Unit Converter',
-    description: 'Easily convert different units of measurement. Pixels, rem, em and other CSS units.',
-    href: '/tools/unit-converter',
-    icon: Calculator,
-    category: 'Utility',
-    tags: ['conversion', 'css', 'units'],
-    status: 'coming-soon' as const
-  }
-]
+const iconMap: Record<string, LucideIcon> = {
+  FileText,
+  Code2,
+  Palette,
+  Calculator,
+  Box,
+}
 
 export default function ToolsPage() {
   return (
     <main className="max-w-[1000px] mx-auto px-4 sm:px-6 py-12 sm:py-20">
+      <SEOBreadcrumb
+        items={[
+          { label: 'Tools', href: '/tools', active: true },
+        ]}
+        className="mb-6"
+      />
       {/* Back to Homepage Button */}
       <div className="mb-8">
-        <Link 
+        <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
         >
@@ -85,7 +57,7 @@ export default function ToolsPage() {
           Back to Homepage
         </Link>
       </div>
-      
+
       <header className="mb-12 sm:mb-20">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">Tools</h1>
         <p className="text-base sm:text-lg text-muted-foreground">
@@ -94,10 +66,10 @@ export default function ToolsPage() {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {tools.map((tool) => {
-          const Icon = tool.icon
+        {TOOLS.map((tool) => {
+          const Icon = iconMap[tool.iconName] || FileText
           const isActive = tool.status === 'active'
-          
+
           return (
             <Card key={tool.id} className="group relative overflow-hidden hover:shadow-md transition-all duration-200">
               {isActive ? (

@@ -93,6 +93,11 @@ export default function ThreeJSEditor({
             value={value || defaultCode}
             onChange={(val) => onChange(val || '')}
             onMount={handleEditorDidMount}
+            loading={
+              <div className="flex items-center justify-center h-full">
+                <div className="text-sm text-muted-foreground animate-pulse">Loading editor...</div>
+              </div>
+            }
             options={{
               fontSize: 14,
               minimap: { enabled: false },
@@ -116,7 +121,7 @@ export default function ThreeJSEditor({
         </div>
         
         {error && (
-          <div className="bg-red-900/20 border-t border-red-500/20 p-3">
+          <div className="bg-red-900/20 border-t border-red-500/20 p-3" aria-live="assertive">
             <div className="flex items-start gap-2">
               <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
               <div className="text-sm text-red-200">

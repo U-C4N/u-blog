@@ -1,36 +1,51 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import ToolPageLayout from '@/components/tool-page-layout'
 import GLSLPreviewer from '@/components/glsl-previewer'
+import { env } from '@/env.mjs'
+
+const title = 'GLSL Shader Previewer'
+const description = 'Free online GLSL fragment shader editor with real-time WebGL rendering. Write, preview, and experiment with shaders.'
 
 export const metadata: Metadata = {
-  title: 'GLSL Shader Previewer | Tools | U-BLOG',
-  description: 'Create and preview GLSL fragment shaders with live editing and real-time rendering',
+  title: `${title} | Tools | U-BLOG`,
+  description,
+  keywords: ['GLSL editor', 'shader previewer', 'WebGL', 'fragment shader', 'real-time shader', 'Shadertoy'],
+  openGraph: {
+    type: 'website',
+    title: `${title} | Tools | U-BLOG`,
+    description,
+    url: `${env.NEXT_PUBLIC_SITE_URL}/tools/glsl-previewer`,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${title} | Tools | U-BLOG`,
+    description,
+  },
+  alternates: {
+    canonical: `${env.NEXT_PUBLIC_SITE_URL}/tools/glsl-previewer`,
+  },
 }
 
 export default function GLSLPreviewerPage() {
   return (
-    <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 sm:py-20">
-      <header className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/tools" className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Tools
-            </Link>
-          </Button>
-        </div>
-        
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">
-          GLSL Shader Previewer
-        </h1>
-        <p className="text-base sm:text-lg text-muted-foreground">
-          Write and preview your GLSL fragment shaders in real-time.
-        </p>
-      </header>
-
+    <ToolPageLayout
+      title={title}
+      description="Write and preview your GLSL fragment shaders in real-time."
+      jsonLd={{
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: title,
+        applicationCategory: 'DeveloperApplication',
+        operatingSystem: 'Web Browser',
+        description,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      }}
+      breadcrumbItems={[
+        { label: 'Tools', href: '/tools' },
+        { label: title, href: '/tools/glsl-previewer', active: true },
+      ]}
+    >
       <GLSLPreviewer />
-    </main>
+    </ToolPageLayout>
   )
 }

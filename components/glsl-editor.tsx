@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FileText, Download, AlertCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { downloadTextFile } from '@/lib/file-utils'
 
 interface GLSLEditorProps {
   value: string
@@ -75,15 +76,7 @@ export default function GLSLEditor({ value, onChange, error, className = '' }: G
   }, [])
 
   const handleExportShader = () => {
-    const blob = new Blob([value], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'shader.glsl'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadTextFile(value, 'shader.glsl', 'text/plain')
   }
 
   const parsedError = error ? parseShaderError(error) : null
@@ -109,7 +102,7 @@ export default function GLSLEditor({ value, onChange, error, className = '' }: G
       
       <CardContent className="p-0 flex flex-col h-full">
         {error && (
-          <Alert variant="destructive" className="m-4 mb-0">
+          <Alert variant="destructive" className="m-4 mb-0" aria-live="assertive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {parsedError ? (
@@ -131,6 +124,11 @@ export default function GLSLEditor({ value, onChange, error, className = '' }: G
             value={value}
             onChange={(val) => onChange(val || '')}
             onMount={handleEditorDidMount}
+            loading={
+              <div className="flex items-center justify-center h-full">
+                <div className="text-sm text-muted-foreground animate-pulse">Loading editor...</div>
+              </div>
+            }
             options={{
               wordWrap: 'on',
               minimap: { enabled: false },

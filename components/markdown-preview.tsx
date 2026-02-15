@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import DOMPurify from 'dompurify'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Copy, Eye, FileText, Download } from 'lucide-react'
+import { Eye, FileText, Download } from 'lucide-react'
 import CopyButton from '@/components/copy-button'
+import { downloadTextFile } from '@/lib/file-utils'
 
 // Simple markdown parser for basic syntax
 function parseMarkdown(markdown: string): string {
@@ -64,21 +66,39 @@ function hello() {
 Experiment with your markdown here and see the changes live.`
 
 export default function MarkdownPreview() {
-  const [markdown, setMarkdown] = useState(defaultMarkdown)
+  const [markdown, setMarkdown] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tool-markdown-content') || defaultMarkdown
+    }
+    return defaultMarkdown
+  })
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write')
+  const [debouncedMarkdown, setDebouncedMarkdown] = useState(markdown)
 
-  const htmlPreview = useMemo(() => parseMarkdown(markdown), [markdown])
+  // Debounce markdown for preview parsing (300ms)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setDebouncedMarkdown(markdown), 300)
+    return () => clearTimeout(timeoutId)
+  }, [markdown])
+
+  // Analytics: track tool view on mount
+  useEffect(() => {
+    const g = (window as unknown as Record<string, unknown>).gtag as ((...args: unknown[]) => void) | undefined
+    g?.('event', 'tool_view', { tool_name: 'markdown-preview' })
+  }, [])
+
+  // Debounced auto-save to localStorage
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('tool-markdown-content', markdown)
+    }, 1000)
+    return () => clearTimeout(timeoutId)
+  }, [markdown])
+
+  const htmlPreview = useMemo(() => DOMPurify.sanitize(parseMarkdown(debouncedMarkdown)), [debouncedMarkdown])
 
   const downloadMarkdown = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'preview.md'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadTextFile(markdown, 'preview.md', 'text/markdown')
   }
 
   return (
