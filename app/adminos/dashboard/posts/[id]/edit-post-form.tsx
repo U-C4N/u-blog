@@ -6,7 +6,7 @@ import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, 
 import Link from 'next/link'
 import Image from 'next/image'
 import { getSupabaseBrowser, type Post } from '../../../../../lib/supabase/config'
-import DOMPurify from 'dompurify'
+import DOMPurify from 'isomorphic-dompurify'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
