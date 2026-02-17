@@ -21,6 +21,16 @@ export const TOOLS: ToolConfig[] = [
     status: 'active'
   },
   {
+    id: 'ascii-converter',
+    title: 'ASCII Converter',
+    description: 'Upload PNG/JPG and convert to 4K-detail ASCII text instantly with automatic two-stage processing and transparent PNG support.',
+    href: '/tools/ascii-converter',
+    iconName: 'Image',
+    category: 'Image',
+    tags: ['ascii', 'png', 'jpg', 'converter'],
+    status: 'active'
+  },
+  {
     id: 'markdown-preview',
     title: 'Markdown Preview',
     description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',

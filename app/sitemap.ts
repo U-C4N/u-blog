@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/privacy`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/tags`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${baseUrl}/tools`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${baseUrl}/tools/ascii-converter`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/tools/markdown-preview`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/tools/glsl-previewer`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${baseUrl}/tools/threejs-previewer`, changeFrequency: 'monthly', priority: 0.6 },
