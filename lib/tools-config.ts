@@ -21,6 +21,16 @@ export const TOOLS: ToolConfig[] = [
     status: 'active'
   },
   {
+    id: 'image-enhancer',
+    title: 'Image Enhancer',
+    description: 'Upscale images to 4K with GPU-accelerated Lanczos3 resampling, smart sharpening, noise reduction, and color correction — entirely in your browser.',
+    href: '/tools/image-enhancer',
+    iconName: 'Sparkles',
+    category: 'Image',
+    tags: ['image', 'upscale', '4k', 'enhance', 'webgpu', 'sharpen'],
+    status: 'active'
+  },
+  {
     id: 'ascii-converter',
     title: 'ASCII Converter',
     description: 'Upload PNG/JPG and convert to 4K-detail ASCII text instantly with automatic two-stage processing and transparent PNG support.',
