@@ -41,6 +41,26 @@ export const TOOLS: ToolConfig[] = [
     status: 'active'
   },
   {
+    id: 'resizer',
+    title: 'Image Resizer',
+    description: 'Resize SVG, PNG, JPG and WEBP files by exact width and height, then export in the format you need without leaving the browser.',
+    href: '/tools/resizer',
+    iconName: 'ScanLine',
+    category: 'Image',
+    tags: ['resize', 'svg', 'png', 'jpg', 'webp'],
+    status: 'active'
+  },
+  {
+    id: 'converter',
+    title: 'File Converter',
+    description: 'Convert PDF, DOCX, DOC, PNG, JPG, SVG, WEBP, TXT, HTML and Markdown files with a browser-first workflow inspired by utility suites like iLovePDF.',
+    href: '/tools/converter',
+    iconName: 'RefreshCw',
+    category: 'Utility',
+    tags: ['pdf', 'docx', 'doc', 'png', 'svg', 'convert'],
+    status: 'active'
+  },
+  {
     id: 'markdown-preview',
     title: 'Markdown Preview',
     description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',

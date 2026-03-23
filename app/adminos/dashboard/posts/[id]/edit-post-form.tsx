@@ -455,9 +455,19 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setIsSEOGenerating(true)
     setError(null)
     try {
+      const supabase = getSupabaseBrowser()
+      const session = await supabase.auth.getSession()
+      const accessToken = session.data.session?.access_token
+      if (!accessToken) {
+        throw new Error('Authentication expired. Please log in again.')
+      }
+
       const res = await fetch('/api/seo-autocomplete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ title, content }),
       })
       if (!res.ok) throw new Error('A.C.S.I request failed')

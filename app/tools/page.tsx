@@ -2,18 +2,18 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, Scissors, Image as ImageIcon, Sparkles, type LucideIcon } from 'lucide-react'
+import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, Scissors, Image as ImageIcon, Sparkles, ScanLine, RefreshCw, type LucideIcon } from 'lucide-react'
 import { TOOLS } from '@/lib/tools-config'
 import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
 import { env } from '@/env.mjs'
 
 const title = 'Developer Tools'
-const description = 'Free online tools: AI background remover, PNG/JPG ASCII converter, Markdown preview, GLSL shader editor, Three.js 3D previewer, and more.'
+const description = 'Free online tools: AI background remover, image resizer, PDF/DOCX converter, PNG/JPG ASCII converter, Markdown preview, GLSL shader editor, Three.js 3D previewer, and more.'
 
 export const metadata: Metadata = {
   title: `${title} | U-BLOG`,
   description,
-  keywords: ['background remover', 'ascii converter', 'developer tools', 'markdown preview', 'GLSL shader editor', 'Three.js previewer', 'online tools', 'web development'],
+  keywords: ['background remover', 'image resizer', 'pdf converter', 'ascii converter', 'developer tools', 'markdown preview', 'GLSL shader editor', 'Three.js previewer', 'online tools', 'web development'],
   openGraph: {
     type: 'website',
     title: `${title} | U-BLOG`,
@@ -39,6 +39,8 @@ const iconMap: Record<string, LucideIcon> = {
   Scissors,
   Sparkles,
   Image: ImageIcon,
+  ScanLine,
+  RefreshCw,
 }
 
 export default function ToolsPage() {

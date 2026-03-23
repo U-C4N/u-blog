@@ -5,9 +5,17 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2, Link as LinkIcon, ImagePlus, EyeOff, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import DOMPurify from 'isomorphic-dompurify'
 import { getSupabaseBrowser } from '../../../../../lib/supabase/config'
 import { SerpPreview } from '@/components/serp-preview'
 import { SeoSuggestions } from '@/components/seo-suggestions'
+
+const sanitizeContent = (value: string): string => {
+  return DOMPurify.sanitize(value, {
+    ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'code', 'pre', 'blockquote', 'audio'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'controls', 'src']
+  })
+}
 
 export default function NewPostPage() {
   const router = useRouter()
@@ -52,6 +60,8 @@ export default function NewPostPage() {
     setError(null)
 
     try {
+      const sanitizedContent = sanitizeContent(content)
+
       // Create URL-friendly slug from title and ensure uniqueness
       const baseSlug = title
         .toLowerCase()
@@ -81,14 +91,14 @@ export default function NewPostPage() {
         .insert({
           title,
           slug,
-          content,
+          content: sanitizedContent,
           published: isPublished,
           tags: tagsInput
             .split(',')
             .map(t => t.trim())
             .filter(Boolean),
           meta_title: metaTitle || title,
-          meta_description: metaDescription || content.slice(0, 160).replace(/\n/g, ' ').trim(),
+          meta_description: metaDescription || sanitizedContent.slice(0, 160).replace(/\n/g, ' ').trim(),
           canonical_url: canonicalUrl || `${baseUrl}/blog/${slug}`,
           og_image_url: ogImageUrl || null,
           noindex,
@@ -301,9 +311,18 @@ export default function NewPostPage() {
     setIsSEOGenerating(true)
     setError(null)
     try {
+      const session = await supabase.auth.getSession()
+      const accessToken = session.data.session?.access_token
+      if (!accessToken) {
+        throw new Error('Authentication expired. Please log in again.')
+      }
+
       const res = await fetch('/api/seo-autocomplete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ title, content }),
       })
       if (!res.ok) throw new Error('A.C.S.I request failed')

@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Add custom type for Supabase cookie methods
 interface CookieMethods {
   get(name: string): string | undefined
   getAll(): { name: string; value: string }[]
@@ -26,21 +25,20 @@ interface CookieMethods {
 }
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  // Create a cookie handler object with the correct methods
   const cookieHandler: CookieMethods = {
     get(name: string) {
       return request.cookies.get(name)?.value
     },
     getAll() {
-      return request.cookies.getAll().map(cookie => ({
+      return request.cookies.getAll().map((cookie) => ({
         name: cookie.name,
-        value: cookie.value
+        value: cookie.value,
       }))
     },
     set(name: string, value: string, options = {}) {
@@ -56,65 +54,54 @@ export async function middleware(request: NextRequest) {
         value: '',
         ...options,
       })
-    }
+    },
   }
 
-  // Create Supabase client with properly typed cookie methods
-  // @ts-ignore - Using correct implementation but TS has conflicts with Supabase types
+  // @ts-ignore Supabase expects a compatible cookie adapter shape.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: cookieHandler
-    }
+      cookies: cookieHandler,
+    },
   )
 
   const { pathname } = request.nextUrl
 
-  // Statik dosyaları ve API rotalarını hariç tut
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') // Dosya uzantılarını hariç tut
+    pathname.includes('.')
   ) {
     return response
   }
 
-  // Admin panel koruması - disabled for testing
-  // if (pathname.startsWith('/adminos') && pathname !== '/adminos/login') {
-  //   // Kullanıcı oturumunu kontrol et
-  //   const { data: { user }, error } = await supabase.auth.getUser()
-  //   
-  //   if (error || !user) {
-  //     // Giriş yapılmamışsa login sayfasına yönlendir
-  //     const loginUrl = new URL('/adminos/login', request.url)
-  //     return NextResponse.redirect(loginUrl)
-  //   }
-  // }
+  if (pathname.startsWith('/adminos') && pathname !== '/adminos/login') {
+    const { data: { user }, error } = await supabase.auth.getUser()
 
-  // Ziyareti Supabase'e kaydet (arka planda çalıştır, yanıtı bloklama)
-  supabase
-    .from('visits') 
-    .insert({ pathname: pathname })
-    .then(({ error }) => {
-      if (error) {
-        console.error('Error logging visit:', pathname, error.message)
-      }
-    })
+    if (error || !user) {
+      const loginUrl = new URL('/adminos/login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+
+  if (!pathname.startsWith('/adminos')) {
+    supabase
+      .from('visits')
+      .insert({ pathname })
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error logging visit:', pathname, error.message)
+        }
+      })
+  }
 
   return response
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
