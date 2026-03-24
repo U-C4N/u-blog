@@ -310,10 +310,10 @@ export default function ThreeJSPreviewer() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
-            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            <h2 className="font-semibold text-lg mb-3 flex items-center gap-2 text-blue-900 dark:text-blue-100">
               <Code2 className="w-5 h-5" />
               Three.js Code Editor
-            </h3>
+            </h2>
             <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
               Write Three.js JavaScript code with full access to the Three.js library. 
               Changes are applied in real-time to the 3D scene.
@@ -358,10 +358,10 @@ export default function ThreeJSPreviewer() {
         </div>
         
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-700">
-          <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-purple-900 dark:text-purple-100">
+          <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-purple-900 dark:text-purple-100">
             <Eye className="w-5 h-5" />
             Quick Tips
-          </h3>
+          </h2>
           
           <div className="space-y-4">
             <div className="space-y-2">

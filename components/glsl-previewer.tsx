@@ -212,10 +212,10 @@ export default function GLSLPreviewer() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <div className="bg-muted/50 rounded-lg p-4">
-            <h3 className="font-medium mb-2 flex items-center gap-2">
+            <h2 className="font-medium mb-2 flex items-center gap-2">
               <Code2 className="w-4 h-4" />
               GLSL Fragment Shader
-            </h3>
+            </h2>
             <p className="text-sm text-muted-foreground mb-3">
               This editor supports Shadertoy-style GLSL fragment shaders. 
               Define your logic inside the <code className="bg-background px-1 rounded text-xs">mainImage</code> function.

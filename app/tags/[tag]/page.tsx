@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/config'
-import { env } from '@/env.mjs'
+import { toAbsoluteSiteUrl } from '@/lib/site'
 
 type PageParams = Promise<{ tag: string }>
 
@@ -19,28 +19,31 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params
+  const normalizedTag = decodeURIComponent(tag)
+
   return {
-    title: `#${tag} posts`,
-    description: `Posts tagged with ${tag}`,
-    alternates: { canonical: `${env.NEXT_PUBLIC_SITE_URL}/tags/${encodeURIComponent(tag)}` },
+    title: `#${normalizedTag} posts`,
+    description: `Posts tagged with ${normalizedTag}`,
+    alternates: { canonical: toAbsoluteSiteUrl(`/tags/${encodeURIComponent(normalizedTag)}`) },
   }
 }
 
 export default async function TagPage({ params }: Props) {
   const { tag } = await params
+  const normalizedTag = decodeURIComponent(tag)
   // Filter in database using 'cs' (contains) operator instead of fetching all and filtering in memory
   const { data: filtered } = await supabase
     .from('posts')
     .select('*')
     .eq('published', true)
-    .contains('tags', [tag])
+    .contains('tags', [normalizedTag])
     .order('created_at', { ascending: false })
 
   const posts = filtered || []
 
   return (
     <main className="max-w-[1000px] mx-auto px-6 py-16">
-      <h1 className="text-2xl font-bold mb-6">#{tag}</h1>
+      <h1 className="text-2xl font-bold mb-6">#{normalizedTag}</h1>
       {posts.length === 0 ? (
         <p className="text-muted-foreground">No posts for this tag.</p>
       ) : (

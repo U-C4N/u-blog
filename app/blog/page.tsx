@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { supabase, type Post } from '@/lib/supabase/config'
-import { env } from '@/env.mjs'
+import { resolveCanonicalUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   keywords: ['blog', 'technology', 'design', 'software engineering', 'AI'],
   openGraph: {
     type: 'website',
-    url: `${env.NEXT_PUBLIC_SITE_URL}/blog`,
+    url: toAbsoluteSiteUrl('/blog'),
     title: 'Blog | U-BLOG',
     description: 'Thoughts on technology, design, and life by Umutcan Edizaslan',
   },
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: 'Thoughts on technology, design, and life by Umutcan Edizaslan',
   },
   alternates: {
-    canonical: `${env.NEXT_PUBLIC_SITE_URL}/blog`,
+    canonical: toAbsoluteSiteUrl('/blog'),
   }
 }
 
@@ -41,7 +41,7 @@ function generateBlogListingStructuredData(posts: Post[]) {
       headline: post.title,
       datePublished: post.created_at,
       dateModified: post.updated_at || post.created_at,
-      url: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`
+      url: resolveCanonicalUrl(post.canonical_url, `/blog/${post.slug}`)
     }))
   }
 }

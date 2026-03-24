@@ -18,6 +18,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import dynamic from 'next/dynamic'
 import { SerpPreview } from '@/components/serp-preview'
 import { SeoSuggestions } from '@/components/seo-suggestions'
+import { resolveCanonicalUrl, siteUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
 // Hoisted regex patterns (created once, reused everywhere)
 const SLUG_PATTERN = /[^a-z0-9]+/g
@@ -81,7 +82,11 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   const [tagsInput, setTagsInput] = useState((initialPost.tags || []).join(', '))
   const [metaTitle, setMetaTitle] = useState(initialPost.meta_title || initialPost.title)
   const [metaDescription, setMetaDescription] = useState(initialPost.meta_description || '')
-  const [canonicalUrl, setCanonicalUrl] = useState(initialPost.canonical_url || '')
+  const initialCanonicalUrl = useMemo(
+    () => resolveCanonicalUrl(initialPost.canonical_url, `/blog/${initialPost.slug}`),
+    [initialPost.canonical_url, initialPost.slug],
+  )
+  const [canonicalUrl, setCanonicalUrl] = useState(initialCanonicalUrl)
   const [ogImageUrl, setOgImageUrl] = useState(initialPost.og_image_url || '')
   const [noindex, setNoindex] = useState(Boolean(initialPost.noindex))
   const [currentLanguage, setCurrentLanguage] = useState(initialPost.language_code || 'en')
@@ -114,7 +119,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       tagsInput !== (initialPost.tags || []).join(', ') ||
       metaTitle !== (initialPost.meta_title || initialPost.title) ||
       metaDescription !== (initialPost.meta_description || '') ||
-      canonicalUrl !== (initialPost.canonical_url || '') ||
+      canonicalUrl !== initialCanonicalUrl ||
       ogImageUrl !== (initialPost.og_image_url || '') ||
       noindex !== Boolean(initialPost.noindex) ||
       customSlug !== (initialPost.slug || '')
@@ -123,7 +128,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     } else {
       setIsDirty(false)
     }
-  }, [title, content, isPublished, initialPost, customSlug, tagsInput, metaTitle, metaDescription, canonicalUrl, ogImageUrl, noindex])
+  }, [title, content, isPublished, initialCanonicalUrl, initialPost, customSlug, tagsInput, metaTitle, metaDescription, canonicalUrl, ogImageUrl, noindex])
 
   useEffect(() => {
     const init = async () => {
@@ -206,7 +211,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
         tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
         meta_title: metaTitle || title,
         meta_description: metaDescription,
-        canonical_url: canonicalUrl,
+        canonical_url: resolveCanonicalUrl(canonicalUrl, `/blog/${customSlug || generateSlug(title)}`),
         og_image_url: ogImageUrl || undefined,
         noindex,
         language_code: 'en',
@@ -230,7 +235,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       // Ping Google sitemap & revalidate blog pages (fire-and-forget)
       const session = await supabase.auth.getSession()
       const accessToken = session.data.session?.access_token
-      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${window.location.origin}/sitemap.xml`)}`).catch(() => {})
+      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})
       if (accessToken) {
         fetch('/api/revalidate', {
           method: 'POST',
@@ -268,8 +273,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   useEffect(() => {
     if (!canonicalTouched) {
       const slug = generateSlug(title)
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-      setCanonicalUrl(baseUrl ? `${baseUrl}/blog/${slug}` : `/blog/${slug}`)
+      setCanonicalUrl(toAbsoluteSiteUrl(`/blog/${slug}`))
     }
   }, [title, canonicalTouched])
 
@@ -652,7 +656,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                           )}
                         </div>
                         <div className="mt-2 text-xs text-muted-foreground">
-                          <span className="opacity-60">{typeof window !== 'undefined' ? window.location.origin : ''}/blog/</span>
+                          <span className="opacity-60">{siteUrl}/blog/</span>
                           <span className="font-mono text-foreground">{customSlug || 'url-slug'}</span>
                         </div>
                       </div>
@@ -993,7 +997,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
               metaTitle={metaTitle}
               metaDescription={metaDescription}
               slug={customSlug || generateSlug(title)}
-              siteUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+              siteUrl={siteUrl}
             />
 
             {/* Smart SEO Suggestions */}

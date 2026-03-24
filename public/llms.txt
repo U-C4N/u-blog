@@ -1,0 +1,12 @@
+# U-BLOG
+> AI engineering notes, developer tools, and technical articles by Umutcan Edizaslan.
+
+Canonical: https://uc4n.com
+Sitemap: https://uc4n.com/sitemap.xml
+
+Preferred content:
+- https://uc4n.com/blog
+- https://uc4n.com/tools
+
+Contact:
+- https://uc4n.com

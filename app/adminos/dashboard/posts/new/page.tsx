@@ -9,6 +9,7 @@ import DOMPurify from 'isomorphic-dompurify'
 import { getSupabaseBrowser } from '../../../../../lib/supabase/config'
 import { SerpPreview } from '@/components/serp-preview'
 import { SeoSuggestions } from '@/components/seo-suggestions'
+import { resolveCanonicalUrl, siteUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
 const sanitizeContent = (value: string): string => {
   return DOMPurify.sanitize(value, {
@@ -41,7 +42,7 @@ export default function NewPostPage() {
     readingTime: Math.ceil(content.trim().split(/\s+/).length / 200)
   }
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+  const baseUrl = siteUrl
 
   // Auto-update canonical URL from title/slug unless user manually edits it
   React.useEffect(() => {
@@ -50,7 +51,7 @@ export default function NewPostPage() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '')
     if (!canonicalTouched) {
-      setCanonicalUrl(baseUrl ? `${baseUrl}/blog/${slug}` : `/blog/${slug}`)
+      setCanonicalUrl(toAbsoluteSiteUrl(`/blog/${slug}`))
     }
   }, [title, baseUrl, canonicalTouched])
 
@@ -99,7 +100,7 @@ export default function NewPostPage() {
             .filter(Boolean),
           meta_title: metaTitle || title,
           meta_description: metaDescription || sanitizedContent.slice(0, 160).replace(/\n/g, ' ').trim(),
-          canonical_url: canonicalUrl || `${baseUrl}/blog/${slug}`,
+          canonical_url: resolveCanonicalUrl(canonicalUrl, `/blog/${slug}`),
           og_image_url: ogImageUrl || null,
           noindex,
           created_at: new Date().toISOString(),
@@ -111,7 +112,7 @@ export default function NewPostPage() {
       // Ping Google sitemap & revalidate blog pages (fire-and-forget)
       const session = await supabase.auth.getSession()
       const accessToken = session.data.session?.access_token
-      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(`${baseUrl}/sitemap.xml`)}`).catch(() => {})
+      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})
       if (accessToken) {
         fetch('/api/revalidate', {
           method: 'POST',
@@ -427,7 +428,7 @@ export default function NewPostPage() {
                 {title && (
                   <div className="mt-3 text-xs text-muted-foreground flex items-center gap-1">
                     <LinkIcon className="w-3 h-3" />
-                    <span className="opacity-60">{typeof window !== 'undefined' ? window.location.origin : ''}/blog/</span>
+                    <span className="opacity-60">{baseUrl}/blog/</span>
                     <span className="font-mono text-foreground">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
                   </div>
                 )}
@@ -668,7 +669,7 @@ export default function NewPostPage() {
               metaTitle={metaTitle}
               metaDescription={metaDescription}
               slug={title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
-              siteUrl={typeof window !== 'undefined' ? window.location.origin : undefined}
+              siteUrl={siteUrl}
             />
 
             {/* Smart SEO Suggestions */}

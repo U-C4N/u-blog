@@ -46,8 +46,10 @@ export default function ToolPageLayout({ title, description, children, jsonLd, b
           {description}
         </p>
       </header>
-
-      {children}
+      <section aria-label={`${title} workspace`}>
+        <h2 className="sr-only">{title} workspace</h2>
+        {children}
+      </section>
     </main>
   )
 }

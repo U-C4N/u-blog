@@ -8,7 +8,7 @@ import { supabase, type Profile, type Building, type GithubRepo, type Prompt } f
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { env } from '@/env.mjs'
+import { siteUrl } from '@/lib/site'
 import CopyButton from '@/components/copy-button'
 
 // Dynamic metadata generation
@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: (profile.meta_keywords as string[] | null) || [],
     openGraph: {
       type: 'website',
-      url: env.NEXT_PUBLIC_SITE_URL,
+      url: siteUrl,
       title,
       description,
       images: profile.og_image_url ? [profile.og_image_url] : undefined,
@@ -63,7 +63,7 @@ function generatePersonStructuredData(profile: Profile) {
     '@type': 'Person',
     name: profile.name,
     jobTitle: profile.subtitle,
-    url: env.NEXT_PUBLIC_SITE_URL,
+    url: siteUrl,
     sameAs: [
       profile.social_links?.github,
       profile.social_links?.twitter,
@@ -184,10 +184,11 @@ export default async function Home() {
                 {/* Hover blur overlay on the page */}
                 <div className="fixed inset-0 bg-black/5 backdrop-blur-[6px] opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none z-40" />
                 <Image
-                  src="/hope.png"
+                  src="/hope-optimized.jpg"
                   alt="Umutcan Edizaslan"
                   width={130}
                   height={150}
+                  sizes="(min-width: 640px) 120px, 90px"
                   className="relative z-50 w-[90px] sm:w-[120px] h-auto transition-all duration-500 group-hover:brightness-110 group-hover:scale-105 group-hover:drop-shadow-[0_0_25px_rgba(255,255,255,0.7)]"
                 />
               </div>
@@ -282,6 +283,12 @@ export default async function Home() {
               description="Collection of useful AI prompts"
               icon={<Sparkles className="w-4 h-4" />}
             />
+            <ProjectLink
+              href="/tags"
+              title="Tags"
+              description="Browse posts by topic and keyword clusters"
+              icon={<BookOpen className="w-4 h-4" />}
+            />
             {prompts[0] && (
                 <div className="glass-prompt-glow glass-shimmer rounded-2xl p-6 sm:p-7 relative overflow-hidden">
                   <div className="absolute top-0 left-0 right-0 h-[1px] gradient-line-top" />
@@ -350,6 +357,14 @@ export default async function Home() {
                     <Github className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
                   </Link>
                 )}
+              </div>
+              <div className="mt-4">
+                <Link
+                  href="/privacy"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Privacy Policy
+                </Link>
               </div>
             </div>
           </Section>

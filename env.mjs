@@ -9,7 +9,7 @@ export const env = createEnv({
   client: {
     // Make client env optional to avoid runtime crashes if not set
     NEXT_PUBLIC_DEEPSEEK_API_KEY: z.string().default(""),
-    NEXT_PUBLIC_SITE_URL: z.string().min(1).default("https://yoursite.com"),
+    NEXT_PUBLIC_SITE_URL: z.string().url().default("https://uc4n.com"),
   },
   runtimeEnv: {
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,

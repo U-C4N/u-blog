@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next'
-import { env } from '@/env.mjs'
+import { siteUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = env.NEXT_PUBLIC_SITE_URL
   return {
     rules: [
       {
@@ -11,7 +10,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/adminos/login/', '/adminos/dashboard/'],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    host: siteUrl,
+    sitemap: toAbsoluteSiteUrl('/sitemap.xml'),
   }
 }
 

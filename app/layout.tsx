@@ -4,7 +4,7 @@ import { Outfit } from 'next/font/google'
 import { Background } from '@/components/background'
 import { Providers } from '@/components/providers'
 import { Analytics } from '@/components/analytics'
-import { env } from '@/env.mjs'
+import { siteUrl } from '@/lib/site'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -12,6 +12,7 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'U-BLOG | Umutcan Edizaslan',
     template: '%s | U-BLOG'
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: env.NEXT_PUBLIC_SITE_URL,
+    url: siteUrl,
     title: 'U-BLOG | Umutcan Edizaslan',
     description: 'Software Engineer and AI Master\'s Student. Thoughts on technology, design, and life.',
     siteName: 'U-BLOG',
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: env.NEXT_PUBLIC_SITE_URL,
+    canonical: siteUrl,
   }
 }
 
@@ -54,7 +55,7 @@ function generateWebSiteStructuredData() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'U-BLOG',
-    url: env.NEXT_PUBLIC_SITE_URL,
+    url: siteUrl,
     description: 'AI engineering insights, developer tools, and open-source projects by Umutcan Edizaslan.',
     author: {
       '@type': 'Person',

@@ -13,9 +13,9 @@ import { downloadTextFile } from '@/lib/file-utils'
 function parseMarkdown(markdown: string): string {
   let html = markdown
     // Headers
-    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-6 mb-3 first:mt-0">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-8 mb-4 first:mt-0">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4 first:mt-0">$1</h1>')
+    .replace(/^### (.*$)/gim, '<h4 class="text-lg font-semibold mt-6 mb-3 first:mt-0">$1</h4>')
+    .replace(/^## (.*$)/gim, '<h3 class="text-xl font-semibold mt-8 mb-4 first:mt-0">$1</h3>')
+    .replace(/^# (.*$)/gim, '<h2 class="text-2xl font-bold mt-8 mb-4 first:mt-0">$1</h2>')
     // Bold and Italic
     .replace(/\*\*\*(.*)\*\*\*/gim, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
@@ -177,7 +177,7 @@ export default function MarkdownPreview() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <FileText className="w-4 h-4" />
-            <h3 className="font-medium">Markdown</h3>
+            <h2 className="font-medium">Markdown</h2>
           </div>
           <textarea
             value={markdown}
@@ -190,7 +190,7 @@ export default function MarkdownPreview() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Eye className="w-4 h-4" />
-            <h3 className="font-medium">Preview</h3>
+            <h2 className="font-medium">Preview</h2>
           </div>
           <Card className="h-[500px]">
             <CardContent className="p-4 h-full overflow-y-auto">

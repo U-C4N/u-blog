@@ -10,11 +10,11 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css' // KaTeX CSS
 import { supabase, type Post } from '@/lib/supabase/config'
-import { env } from '@/env.mjs'
 import { SocialShare } from '@/components/social-share'
 import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
 import { RelatedPosts } from '@/components/related-posts'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { resolveCanonicalUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,6 +91,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .slice(0, 200) // Take first 200 chars
     .trim() + '...' // Add ellipsis
 
+  const canonicalUrl = resolveCanonicalUrl(post.canonical_url, `/blog/${post.slug}`)
+
   return {
     title: post.meta_title || post.title,
     description: post.meta_description || excerpt,
@@ -99,7 +101,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     robots: post.noindex ? { index: false, follow: true } : undefined,
     openGraph: {
       type: 'article',
-      url: `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+      url: toAbsoluteSiteUrl(`/blog/${post.slug}`),
       title: post.meta_title || post.title,
       description: post.meta_description || excerpt,
       publishedTime: post.created_at,
@@ -115,13 +117,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: post.og_image_url ? [post.og_image_url] : undefined,
     },
     alternates: {
-      canonical: post.canonical_url || `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+      canonical: canonicalUrl,
     }
   }
 }
 
 // Generate structured data for blog post
-function generateBlogStructuredData(post: Post, wordCount: number, readingTime: number) {
+function generateBlogStructuredData(post: Post, wordCount: number, readingTime: number, canonicalUrl: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -135,7 +137,7 @@ function generateBlogStructuredData(post: Post, wordCount: number, readingTime: 
     dateModified: post.updated_at || post.created_at,
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`,
+      '@id': canonicalUrl,
     },
     wordCount: wordCount,
     timeRequired: `PT${readingTime}M`,
@@ -167,7 +169,8 @@ export default async function Page({ params }: Props) {
 
   const wordCount = post.content.trim().split(/\s+/).length
   const readingTime = Math.ceil(wordCount / 200)
-  const structuredData = generateBlogStructuredData(post, wordCount, readingTime)
+  const canonicalUrl = resolveCanonicalUrl(post.canonical_url, `/blog/${post.slug}`)
+  const structuredData = generateBlogStructuredData(post, wordCount, readingTime, canonicalUrl)
 
   // Breadcrumb items for this post
   const breadcrumbItems = [
@@ -242,7 +245,7 @@ export default async function Page({ params }: Props) {
                 <div className="ml-auto flex items-center gap-3">
                   <SocialShare 
                     title={post.title}
-                    url={`${env.NEXT_PUBLIC_SITE_URL}/blog/${post.slug}`}
+                    url={canonicalUrl}
                   />
                 </div>
               </div>
@@ -273,9 +276,9 @@ export default async function Page({ params }: Props) {
                     rehypePlugins={[rehypeRaw, rehypeKatex]}
                     components={{
                       h1: ({children, ...props}) => (
-                        <h1 className="text-3xl font-bold mb-6 mt-8 text-foreground leading-tight" {...props}>
+                        <h2 className="text-3xl font-bold mb-6 mt-8 text-foreground leading-tight" {...props}>
                           {children}
-                        </h1>
+                        </h2>
                       ),
                       h2: ({children, ...props}) => (
                         <h2 className="text-2xl font-semibold mb-4 mt-8 text-foreground leading-tight" {...props}>

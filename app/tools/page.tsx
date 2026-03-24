@@ -70,6 +70,8 @@ export default function ToolsPage() {
         </p>
       </header>
 
+      <h2 className="sr-only">Tool directory</h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {TOOLS.map((tool) => {
           const Icon = iconMap[tool.iconName] || FileText
