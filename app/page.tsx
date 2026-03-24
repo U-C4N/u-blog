@@ -184,10 +184,10 @@ export default async function Home() {
                 {/* Hover blur overlay on the page */}
                 <div className="fixed inset-0 bg-black/5 backdrop-blur-[6px] opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none z-40" />
                 <Image
-                  src="/hope-optimized.jpg"
+                  src="/hope-optimized.webp"
                   alt="Umutcan Edizaslan"
-                  width={130}
-                  height={150}
+                  width={360}
+                  height={439}
                   sizes="(min-width: 640px) 120px, 90px"
                   className="relative z-50 w-[90px] sm:w-[120px] h-auto transition-all duration-500 group-hover:brightness-110 group-hover:scale-105 group-hover:drop-shadow-[0_0_25px_rgba(255,255,255,0.7)]"
                 />
