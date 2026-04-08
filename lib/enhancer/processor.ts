@@ -1,4 +1,5 @@
-import type { EnhanceOptions, ProgressCallback } from './types'
+import { enhanceImageWithAI } from './ai-upscaler'
+import type { EnhanceOptions, EnhanceResult, ProgressCallback } from './types'
 
 // ─── WGSL Shaders ────────────────────────────────────────────────────────────
 
@@ -416,11 +417,11 @@ function makeUniform(fmt: string, vals: number[]): ArrayBuffer {
   return buf
 }
 
-export async function enhanceImage(
+async function enhanceClassicImage(
   file: File,
   options: EnhanceOptions,
   onProgress?: ProgressCallback,
-): Promise<{ blob: Blob; width: number; height: number; engine: 'webgpu' | 'cpu'; elapsedMs: number }> {
+): Promise<EnhanceResult> {
   const t0 = performance.now()
   const report = (percent: number, label: string) => onProgress?.({ percent, label })
   report(2, 'Loading image')
@@ -559,5 +560,48 @@ export async function enhanceImage(
     height: imageData.height,
     engine,
     elapsedMs: Math.round(performance.now() - t0),
+    modeUsed: 'classic',
+  }
+}
+
+function getFallbackReason(reason: unknown): string {
+  if (reason instanceof Error && reason.message) {
+    return reason.message
+  }
+
+  return 'AI upscale was unavailable on this device.'
+}
+
+export async function enhanceImage(
+  file: File,
+  options: EnhanceOptions,
+  onProgress?: ProgressCallback,
+): Promise<EnhanceResult> {
+  if (options.mode !== 'ai') {
+    return enhanceClassicImage(file, options, onProgress)
+  }
+
+  if (options.scale === 1) {
+    const result = await enhanceClassicImage(file, options, onProgress)
+    return {
+      ...result,
+      fallbackReason: 'AI Upscale requires 2x or 4x output.',
+    }
+  }
+
+  try {
+    return await enhanceImageWithAI(file, options, onProgress)
+  } catch (reason) {
+    onProgress?.({
+      percent: 10,
+      label: 'AI upscale unavailable, switching to classic pipeline',
+    })
+
+    const result = await enhanceClassicImage(file, options, onProgress)
+
+    return {
+      ...result,
+      fallbackReason: getFallbackReason(reason),
+    }
   }
 }

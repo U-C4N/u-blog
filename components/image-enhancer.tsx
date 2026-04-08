@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { enhanceImage, hasWebGpuSupport, checkWebGpuReady } from '@/lib/enhancer/processor'
-import type { EnhanceOptions, EnhanceProgress } from '@/lib/enhancer/types'
+import type { EnhanceBackend, EnhanceMode, EnhanceOptions, EnhanceProgress } from '@/lib/enhancer/types'
 import { DEFAULT_OPTIONS } from '@/lib/enhancer/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -35,6 +35,21 @@ function formatSize(bytes: number): string {
 
 function formatRuntime(ms: number): string {
   return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(2)} s`
+}
+
+function formatMode(mode: EnhanceMode): string {
+  return mode === 'ai' ? 'AI Upscale' : 'Classic'
+}
+
+function formatEngine(engine: EnhanceBackend): string {
+  switch (engine) {
+    case 'webgpu':
+      return 'WebGPU'
+    case 'wasm':
+      return 'WASM'
+    default:
+      return 'CPU'
+  }
 }
 
 function safeName(filename: string): string {
@@ -78,6 +93,7 @@ export default function ImageEnhancer() {
   const [resultDims, setResultDims] = useState<{ w: number; h: number } | null>(null)
   const [srcDims, setSrcDims] = useState<{ w: number; h: number } | null>(null)
 
+  const [mode, setMode] = useState<EnhanceMode>(DEFAULT_OPTIONS.mode)
   const [scale, setScale] = useState<1 | 2 | 4>(DEFAULT_OPTIONS.scale)
   const [sharpen, setSharpen] = useState(DEFAULT_OPTIONS.sharpen)
   const [denoise, setDenoise] = useState(DEFAULT_OPTIONS.denoise)
@@ -91,7 +107,10 @@ export default function ImageEnhancer() {
   const [progress, setProgress] = useState(0)
   const [progressLabel, setProgressLabel] = useState('Ready')
   const [error, setError] = useState<string | null>(null)
-  const [engine, setEngine] = useState<'webgpu' | 'cpu' | null>(null)
+  const [engine, setEngine] = useState<EnhanceBackend | null>(null)
+  const [modeUsed, setModeUsed] = useState<EnhanceMode | null>(null)
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null)
+  const [usedTiledInference, setUsedTiledInference] = useState(false)
   const [runtimeMs, setRuntimeMs] = useState<number | null>(null)
   const [webGpuReady, setWebGpuReady] = useState(false)
   const [webGpuChecked, setWebGpuChecked] = useState(false)
@@ -109,6 +128,7 @@ export default function ImageEnhancer() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const isAiMode = mode === 'ai'
   const canRun = Boolean(file) && !processing
   const canDownload = Boolean(resultBlob) && !processing
 
@@ -129,6 +149,9 @@ export default function ImageEnhancer() {
     setResultDims(null)
     setRuntimeMs(null)
     setEngine(null)
+    setModeUsed(null)
+    setFallbackReason(null)
+    setUsedTiledInference(false)
     setProgress(0)
     setProgressLabel('Ready')
   }, [])
@@ -156,20 +179,30 @@ export default function ImageEnhancer() {
     setProcessing(true); setError(null); clearResult()
     setProgress(2); setProgressLabel('Starting')
     try {
-      const opts: EnhanceOptions = { scale, sharpen, denoise, brightness, contrast, saturation, format, quality: jpegQuality }
+      const opts: EnhanceOptions = { mode, scale, sharpen, denoise, brightness, contrast, saturation, format, quality: jpegQuality }
       const onProg = (p: EnhanceProgress) => { setProgress(p.percent); setProgressLabel(p.label) }
       const result = await enhanceImage(file, opts, onProg)
       setResultBlob(result.blob)
       setResultUrl(prev => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(result.blob) })
       setResultDims({ w: result.width, h: result.height }); setEngine(result.engine)
+      setModeUsed(result.modeUsed)
+      setFallbackReason(result.fallbackReason ?? null)
+      setUsedTiledInference(Boolean(result.tiled))
       setRuntimeMs(result.elapsedMs); setProgress(100); setProgressLabel('Done')
       const g = (window as unknown as Record<string, unknown>).gtag as ((...a: unknown[]) => void) | undefined
-      g?.('event', 'tool_action', { tool_name: 'image-enhancer', scale, engine: result.engine, format })
+      g?.('event', 'tool_action', {
+        tool_name: 'image-enhancer',
+        requested_mode: mode,
+        mode_used: result.modeUsed,
+        scale,
+        engine: result.engine,
+        format,
+      })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Enhancement failed. Try another image.')
       setProgressLabel('Failed')
     } finally { setProcessing(false) }
-  }, [file, processing, clearResult, scale, sharpen, denoise, brightness, contrast, saturation, format, jpegQuality])
+  }, [file, processing, clearResult, mode, scale, sharpen, denoise, brightness, contrast, saturation, format, jpegQuality])
 
   // ── Download ───────────────────────────────────────────────────────────────
   const downloadResult = useCallback(() => {
@@ -183,7 +216,7 @@ export default function ImageEnhancer() {
 
   // ── Reset ──────────────────────────────────────────────────────────────────
   const resetSettings = useCallback(() => {
-    setScale(DEFAULT_OPTIONS.scale); setSharpen(DEFAULT_OPTIONS.sharpen)
+    setMode(DEFAULT_OPTIONS.mode); setScale(DEFAULT_OPTIONS.scale); setSharpen(DEFAULT_OPTIONS.sharpen)
     setDenoise(DEFAULT_OPTIONS.denoise); setBrightness(DEFAULT_OPTIONS.brightness)
     setContrast(DEFAULT_OPTIONS.contrast); setSaturation(DEFAULT_OPTIONS.saturation)
     setFormat(DEFAULT_OPTIONS.format); setJpegQuality(DEFAULT_OPTIONS.quality)
@@ -249,7 +282,7 @@ export default function ImageEnhancer() {
                 : 'bg-muted text-muted-foreground',
             )}>
               {webGpuReady ? <Zap className="h-3 w-3" /> : <Cpu className="h-3 w-3" />}
-              {!webGpuChecked ? 'Checking...' : webGpuReady ? 'WebGPU' : 'CPU Fallback'}
+              {!webGpuChecked ? 'Checking...' : webGpuReady ? 'WebGPU Ready' : 'Browser Fallback'}
             </span>
             {outputDimLabel?.is4k && (
               <span className="inline-flex items-center rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-300">
@@ -351,6 +384,47 @@ export default function ImageEnhancer() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Controls Column */}
           <div className="space-y-8 lg:col-span-7">
+            {/* Mode */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                  Mode
+                </span>
+                <Separator className="flex-1 bg-foreground/5" />
+              </div>
+              <div className="relative flex w-full max-w-[280px] rounded-lg border border-foreground/8 bg-muted/10 p-1">
+                {(['ai', 'classic'] as const).map(nextMode => (
+                  <button
+                    key={nextMode}
+                    type="button"
+                    onClick={() => {
+                      setMode(nextMode)
+                      if (nextMode === 'ai' && scale === 1) {
+                        setScale(2)
+                      }
+                    }}
+                    className="relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-colors"
+                  >
+                    {mode === nextMode && (
+                      <motion.div
+                        layoutId="mode-bg"
+                        className="absolute inset-0 rounded-md bg-amber-500/10"
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                      />
+                    )}
+                    <span className={cn('relative', mode === nextMode ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>
+                      {formatMode(nextMode)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                {isAiMode
+                  ? 'True super-resolution with model caching and automatic fallback.'
+                  : 'GPU/CPU browser pipeline with sharpening, denoise, and color controls.'}
+              </p>
+            </div>
+
             {/* Upscale */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -361,8 +435,16 @@ export default function ImageEnhancer() {
               </div>
               <div className="relative flex rounded-lg border border-foreground/8 bg-muted/10 p-1">
                 {([1, 2, 4] as const).map(s => (
-                  <button key={s} type="button" onClick={() => setScale(s)}
-                    className="relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-colors">
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={isAiMode && s === 1}
+                    onClick={() => setScale(s)}
+                    className={cn(
+                      'relative z-10 flex-1 rounded-md px-3 py-2 text-center text-sm font-medium transition-colors',
+                      isAiMode && s === 1 && 'cursor-not-allowed opacity-40',
+                    )}
+                  >
                     {scale === s && (
                       <motion.div
                         layoutId="scale-bg"
@@ -379,6 +461,11 @@ export default function ImageEnhancer() {
               {outputDimLabel && (
                 <p className="text-[10px] font-mono tabular-nums text-muted-foreground">
                   Output: {outputDimLabel.w}x{outputDimLabel.h}{outputDimLabel.is4k && ' (4K+)'}
+                </p>
+              )}
+              {isAiMode && (
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  AI mode requires 2x or 4x output.
                 </p>
               )}
             </div>
@@ -434,76 +521,103 @@ export default function ImageEnhancer() {
               </AnimatePresence>
             </div>
 
-            {/* Detail */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                  Detail
-                </span>
-                <Separator className="flex-1 bg-foreground/5" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {isAiMode ? (
+              <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sharpen</span>
-                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{sharpen}</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-amber-700 dark:text-amber-300">
+                    AI Upscale Notes
+                  </p>
+                  <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground">
+                    The model is lazy-loaded on first use, cached by the browser, and run tile-by-tile on larger images.
+                    If AI inference is unavailable, the tool falls back to the classic pipeline automatically.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {['Swin2SR model cache', 'Tiled inference', 'Automatic fallback'].map(label => (
+                      <span
+                        key={label}
+                        className="rounded-md border border-amber-500/20 bg-background/80 px-2 py-1 text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-300"
+                      >
+                        {label}
+                      </span>
+                    ))}
                   </div>
-                  <Slider
-                    min={0} max={100} step={1} value={[sharpen]}
-                    onValueChange={v => setSharpen(v[0] ?? 30)}
-                    className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Noise Reduction</span>
-                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{denoise}</span>
-                  </div>
-                  <Slider
-                    min={0} max={100} step={1} value={[denoise]}
-                    onValueChange={v => setDenoise(v[0] ?? 0)}
-                    className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
-                  />
                 </div>
               </div>
-            </div>
-
-            {/* Color */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                  Color
-                </span>
-                <Separator className="flex-1 bg-foreground/5" />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {([
-                  ['Brightness', brightness, setBrightness] as const,
-                  ['Contrast', contrast, setContrast] as const,
-                  ['Saturation', saturation, setSaturation] as const,
-                ]).map(([label, value, setter]) => (
-                  <div key={label} className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
-                      <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{value > 0 ? `+${value}` : value}</span>
+            ) : (
+              <>
+                {/* Detail */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                      Detail
+                    </span>
+                    <Separator className="flex-1 bg-foreground/5" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sharpen</span>
+                        <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{sharpen}</span>
+                      </div>
+                      <Slider
+                        min={0} max={100} step={1} value={[sharpen]}
+                        onValueChange={v => setSharpen(v[0] ?? 30)}
+                        className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
+                      />
                     </div>
-                    <Slider
-                      min={-50} max={50} step={1} value={[value]}
-                      onValueChange={v => setter(v[0] ?? 0)}
-                      className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Noise Reduction</span>
+                        <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{denoise}</span>
+                      </div>
+                      <Slider
+                        min={0} max={100} step={1} value={[denoise]}
+                        onValueChange={v => setDenoise(v[0] ?? 0)}
+                        className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="flex justify-end pt-1">
-                <button
-                  type="button"
-                  onClick={resetSettings}
-                  className="text-[11px] text-muted-foreground/60 transition-colors hover:text-foreground"
-                >
-                  Reset all
-                </button>
-              </div>
+                </div>
+
+                {/* Color */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                      Color
+                    </span>
+                    <Separator className="flex-1 bg-foreground/5" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {([
+                      ['Brightness', brightness, setBrightness] as const,
+                      ['Contrast', contrast, setContrast] as const,
+                      ['Saturation', saturation, setSaturation] as const,
+                    ]).map(([label, value, setter]) => (
+                      <div key={label} className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+                          <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{value > 0 ? `+${value}` : value}</span>
+                        </div>
+                        <Slider
+                          min={-50} max={50} step={1} value={[value]}
+                          onValueChange={v => setter(v[0] ?? 0)}
+                          className="[&_[role=slider]]:border-amber-500 [&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5 [&>span:first-child]:h-1 [&>span:first-child>span]:bg-amber-500 [&>span:first-child]:bg-foreground/8"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={resetSettings}
+                className="text-[11px] text-muted-foreground/60 transition-colors hover:text-foreground"
+              >
+                Reset all
+              </button>
             </div>
           </div>
 
@@ -567,7 +681,7 @@ export default function ImageEnhancer() {
             )}
           >
             {processing ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enhancing...</>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isAiMode ? 'Upscaling...' : 'Enhancing...'}</>
             ) : (
               <>
                 <motion.span
@@ -577,7 +691,7 @@ export default function ImageEnhancer() {
                 >
                   <Sparkles className="h-4 w-4" />
                 </motion.span>
-                Enhance Image
+                {isAiMode ? 'Run AI Upscale' : 'Run Classic Enhance'}
               </>
             )}
           </Button>
@@ -592,15 +706,24 @@ export default function ImageEnhancer() {
         </div>
 
         {/* Result metadata */}
-        {(runtimeMs !== null || engine || resultDims || resultBlob) && (
-          <p className="font-mono text-[10px] text-muted-foreground">
-            {[
-              runtimeMs !== null && formatRuntime(runtimeMs),
-              engine && `Engine: ${engine}`,
-              resultDims && `${resultDims.w}x${resultDims.h}`,
-              resultBlob && formatSize(resultBlob.size),
-            ].filter(Boolean).join(' \u00b7 ')}
-          </p>
+        {(runtimeMs !== null || engine || resultDims || resultBlob || modeUsed || fallbackReason) && (
+          <div className="space-y-2">
+            <p className="font-mono text-[10px] text-muted-foreground">
+              {[
+                runtimeMs !== null && formatRuntime(runtimeMs),
+                modeUsed && formatMode(modeUsed),
+                engine && formatEngine(engine),
+                usedTiledInference && 'Tiled',
+                resultDims && `${resultDims.w}x${resultDims.h}`,
+                resultBlob && formatSize(resultBlob.size),
+              ].filter(Boolean).join(' \u00b7 ')}
+            </p>
+            {fallbackReason && (
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+                AI upscale fell back to Classic: {fallbackReason}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Progress */}
