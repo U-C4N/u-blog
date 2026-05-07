@@ -19,7 +19,7 @@ Built with Next.js 16 · React 19 · Supabase · TypeScript
 
 <br />
 
-*Glassmorphism UI · AI-powered SEO · Developer Tools · Markdown Editor · Multi-language Support*
+*Glassmorphism UI · AI-powered SEO · Browser-side AI tools · Markdown editor · Multi-language support*
 
 </div>
 
@@ -27,94 +27,124 @@ Built with Next.js 16 · React 19 · Supabase · TypeScript
 
 ## Overview
 
-U-Blog is a full-featured personal website and blogging platform with a glassmorphism design language. It ships with an admin dashboard, markdown editor with media uploads, AI-powered SEO tooling, interactive developer tools (GLSL shaders, Three.js 3D scenes), and a public-facing portfolio page — all backed by Supabase.
+U-Blog is a full-featured personal site and blogging platform with a glassmorphism design language. It ships with an admin dashboard, a markdown editor with media uploads, AI-powered SEO tooling, nine zero-upload browser tools (image enhancer, ASCII converter, background remover, file converter, file merger, GLSL/Three.js previewers, etc.), and a public-facing portfolio — all backed by Supabase with cookie-based SSR auth.
 
 ---
 
 ## Features
 
-### Content & Editor
-- **Markdown editor** with live preview, word count, and reading time stats
+### Content & editor
+- **Markdown editor** with live preview, word count, and reading-time stats
 - **Image upload** (JPEG, PNG, GIF, WebP — max 5 MB) to Supabase Storage
 - **Audio upload** (MP3, WAV, OGG — max 20 MB) with inline `<audio>` player
-- **LaTeX math rendering** via remark-math + rehype-katex
+- **LaTeX math rendering** via `remark-math` + `rehype-katex`
 - **Syntax highlighting** for code blocks
-- **OG Image upload** with preview for social sharing
-- **DOMPurify** sanitization for XSS protection
+- **OG image upload** with preview for social sharing
+- **DOMPurify** sanitization (centralized allow-list in `lib/sanitize.ts`)
+- **Multi-language posts** — store translations per locale on a single post row
 
-### Admin Dashboard
+### Admin dashboard
 - **Post CRUD** — create, edit, delete with publish/draft workflow
 - **Profile management** — name, title, bio, social links, SEO meta fields
 - **AI Prompts manager** — curate and showcase prompt collections
-- **Buildings manager** — academic works and projects
-- **GitHub repos integration** — select repositories to showcase on homepage
-- **Supabase Auth** login with session management and logout
+- **Buildings manager** — academic works and projects with ordering
+- **GitHub repos integration** — pick which repositories show up on the homepage
+- **Supabase Auth** — email/password login with cookie-based SSR sessions and defense-in-depth checks
 
 ### SEO & AI
-- **A.C.S.I** *(Auto-Completer SEO Info)* — one-click AI-generated meta title, description, and tags via Groq API
+- **A.C.S.I** *(Auto-Completer SEO Info)* — one-click AI-generated meta title, description, and tags via the Groq API
 - **Google SERP preview** — real-time search result preview in the editor sidebar
-- **Smart SEO suggestions** — heading hierarchy, alt text, internal link analysis
-- **Per-post SEO fields** — meta title, description, canonical URL, OG image, noindex toggle
-- **JSON-LD structured data** — WebSite, Person, Blog, BlogPosting, BreadcrumbList schemas
+- **Smart SEO suggestions** — heading hierarchy, alt text, internal-link analysis
+- **Per-post SEO fields** — meta title, description, canonical URL, OG image, `noindex` toggle
+- **JSON-LD structured data** — `WebSite`, `Person`, `Blog`, `BlogPosting`, `BreadcrumbList`
 - **OpenGraph & Twitter Card** metadata on every page
 - **Dynamic `sitemap.xml`** and **`robots.txt`** — auto-generated from published posts
 - **Google sitemap ping** on post publish
 
-### Developer Tools
-- **GLSL Shader Previewer** — WebGL fragment shader editor with real-time rendering and uniform controls
-- **Three.js Previewer** — 3D scene editor powered by Monaco code editor
-- **Markdown Preview** — full-featured markdown editor with responsive split layout
+### Browser tools (`/tools`)
+All tools run **fully in the browser** — zero upload, fully private.
 
-### Public Pages
-- **Homepage** — portfolio with profile, academic works, open-source projects timeline, featured prompt card, explore navigation, and social links
+| Tool | Description |
+|:-----|:------------|
+| **Background Remover** | GPU-accelerated background removal with transparent PNG export |
+| **Image Enhancer** | Upscale to 4K with WebGPU + Lanczos3, sharpening, denoise, color correction |
+| **ASCII Converter** | PNG/JPG → 4K ASCII text with two-stage processing and transparent PNG support |
+| **Image Resizer** | Resize SVG/PNG/JPG/WebP by exact width/height with format conversion |
+| **File Converter** | PDF, DOCX, DOC, PNG, JPG, SVG, WebP, TXT, HTML, and Markdown — all browser-side |
+| **File Merger** | Combine TXT, PDF, DOC, and DOCX files into a single document — auto-detects formats, drag-to-reorder, exports as PDF / DOCX / TXT |
+| **Markdown Preview** | Live markdown editor with split-pane responsive layout |
+| **GLSL Shader Previewer** | WebGL fragment-shader editor with real-time rendering and uniforms |
+| **Three.js Previewer** | 3D scene editor powered by Monaco code editor |
+
+Coming soon: code formatter, color palette generator, unit converter.
+
+### Public pages
+- **Homepage** — portfolio: profile, academic works, open-source timeline, featured prompt, social links
 - **Blog** — timeline view grouped by year with tag badges
-- **Blog Post** — full article with breadcrumbs, social share, related posts, language switcher, and reading stats
-- **Tags** — browse all tags with post counts, filter by tag
+- **Blog post** — breadcrumbs, social share, related posts, language switcher, reading stats
+- **Tags** — browse all tags with post counts; per-tag listing
 - **Prompts** — public prompt collection with one-click copy
-- **Privacy** page
+- **Privacy** — privacy policy
 
-### Design & Performance
-- **Glassmorphism UI** — custom glass, shimmer, glow, and float CSS utilities
-- **Gradient background** with animated color orbs and grain texture overlay
+### Design & performance
+- **Glassmorphism UI** — custom `.glass`, shimmer, glow, and float CSS utilities
+- **Animated gradient background** with color orbs and grain texture overlay
 - **Staggered fade-in animations** for page sections
-- **Dark mode** support via CSS custom properties
+- **Dark mode** via CSS custom properties
 - **`content-visibility: auto`** for virtualized list rendering
-- **Optimized barrel imports** for lucide-react, date-fns, react-syntax-highlighter
+- **Optimized barrel imports** for `lucide-react`, `date-fns`, `react-syntax-highlighter`
 - **Outfit** Google Font with `display: swap`
-- **Standalone output** mode for container deployments
+- **Standalone output** for container deployments
 
 ---
 
-## Tech Stack
+## Architecture highlights
+
+- **Cookie-based SSR auth via `@supabase/ssr`** — `proxy.ts` (the Next.js 16 successor to `middleware.ts`) refreshes Supabase sessions through `getAll`/`setAll` cookies. The browser, server, and proxy all share the same auth state, so no more "randomly logged out" bugs.
+- **Three Supabase clients, one source of truth**:
+  - `lib/supabase/client.ts` — browser singleton (`createBrowserClient`)
+  - `lib/supabase/server.ts` — async server client (`createServerClient` + `await cookies()`) for Server Components, Route Handlers, and Server Actions
+  - `lib/supabase/config.ts` — anon-key client for public read-only paths (sitemap, public blog) and shared TypeScript types
+- **Defense-in-depth admin guard** — proxy redirects unauthenticated `/adminos/*` → `/adminos/login`, the dashboard layout re-checks via `getUser()`, and every server-rendered admin page calls `getUser()` again. No single layer is trusted.
+- **Reusable auth helpers** — `lib/supabase/auth.ts` exposes `getAdminSession()` (React-cached), `requireAdmin()` (auto-redirect), and `verifyBearerAdmin()` (legacy Bearer token fallback).
+- **Centralized sanitization & slug helpers** — `lib/sanitize.ts` and `lib/slug.ts` replace previously duplicated logic across the new- and edit-post pages.
+- **Per-request data deduplication** — `app/blog/[slug]/page.tsx` wraps `getPost` in `React.cache()` so `generateMetadata` and the page share a single Supabase fetch.
+
+---
+
+## Tech stack
 
 | Layer | Technology |
 |:------|:-----------|
-| **Framework** | Next.js 16 (App Router, Server Components) |
+| **Framework** | Next.js 16 (App Router, React Server Components, Turbopack) |
 | **Runtime** | React 19 |
 | **Language** | TypeScript 5.9 |
-| **Database** | Supabase (PostgreSQL) |
-| **Storage** | Supabase Storage (`blog-images`) |
-| **Auth** | Supabase Auth (email/password, SSR middleware) |
-| **Styling** | Tailwind CSS v4 + `@tailwindcss/typography` |
-| **UI Components** | shadcn/ui (50+ Radix UI primitives) |
-| **Code Editor** | Monaco Editor (`@monaco-editor/react`) |
-| **Markdown** | React Markdown + remark-gfm + rehype-raw |
-| **Math** | remark-math + rehype-katex |
-| **3D Graphics** | Three.js |
+| **Database** | Supabase (PostgreSQL) with Row Level Security |
+| **Storage** | Supabase Storage — `blog-images`, `blog-audio` buckets |
+| **Auth** | Supabase Auth via `@supabase/ssr` (cookie-based SSR sessions) |
+| **Styling** | Tailwind CSS v4 (CSS-based config) + `@tailwindcss/typography` |
+| **UI Components** | shadcn/ui · Radix UI primitives |
+| **Code editor** | Monaco Editor (`@monaco-editor/react`) |
+| **Markdown** | `react-markdown` + `remark-gfm` + `rehype-raw` |
+| **Math** | `remark-math` + `rehype-katex` |
+| **3D graphics** | Three.js |
+| **In-browser AI** | `@huggingface/transformers`, `@imgly/background-removal` (WebGPU + Web Workers) |
 | **Animation** | Framer Motion |
 | **Charts** | Recharts |
-| **Forms** | React Hook Form + Zod |
-| **AI** | OpenAI SDK · Groq API |
-| **Env Validation** | `@t3-oss/env-nextjs` |
+| **Document tooling** | `pdf-lib`, `pdfjs-dist`, `mammoth`, `docx`, `jszip`, `turndown` |
+| **AI APIs** | OpenAI SDK · Groq API |
+| **Sanitization** | `isomorphic-dompurify` |
+| **Env validation** | `@t3-oss/env-nextjs` + `zod` |
 
 ---
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
-- **Node.js 18+** (see `.nvmrc`)
-- A [Supabase](https://supabase.com) project with the required tables (see [Database Schema](#database-schema))
+- **Node.js 20** (pinned via `.nvmrc`)
+- A [Supabase](https://supabase.com) project with the required tables (see [Database schema](#database-schema)) and the `blog-images` and `blog-audio` storage buckets
+- *(Optional)* a [Groq](https://console.groq.com/) API key if you want to use the A.C.S.I SEO auto-complete
 
 ### Installation
 
@@ -124,7 +154,7 @@ cd u-blog
 npm install
 ```
 
-### Environment Variables
+### Environment variables
 
 Create a `.env.local` file in the project root:
 
@@ -132,94 +162,118 @@ Create a `.env.local` file in the project root:
 # Required
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+
+# Recommended (defaults to https://uc4n.com)
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Optional — AI & Search features
-NEXT_PUBLIC_DEEPSEEK_API_KEY=   # AI features
-GROQ_API_KEY=                    # A.C.S.I SEO auto-complete
-TAVILY_API_KEY=                  # Server-side search
+# Optional — only needed for the A.C.S.I SEO button
+GROQ_API_KEY=
+
+# Declared in env.mjs but currently unused by route code
+TAVILY_API_KEY=
+NEXT_PUBLIC_DEEPSEEK_API_KEY=
 ```
 
 | Variable | Required | Description |
 |:---------|:--------:|:------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Your site's public URL |
-| `NEXT_PUBLIC_DEEPSEEK_API_KEY` | No | DeepSeek API key for AI features |
-| `GROQ_API_KEY` | No | Groq API key for A.C.S.I SEO tool |
-| `TAVILY_API_KEY` | No | Tavily API key for server-side search |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon (publishable) key |
+| `NEXT_PUBLIC_SITE_URL` | ⚪ | Public site URL used for canonical/OG URLs (defaults to `https://uc4n.com`) |
+| `GROQ_API_KEY` | ⚪ | Required only for `/api/seo-autocomplete` |
+| `TAVILY_API_KEY` | ⚪ | Declared in `env.mjs`, currently unused |
+| `NEXT_PUBLIC_DEEPSEEK_API_KEY` | ⚪ | Declared in `env.mjs`, currently unused |
 
-### Development
+`env.mjs` is the source of truth for environment variables. Supabase URL/anon key are read directly from `process.env` because they're needed before validation runs.
+
+### Scripts
 
 ```bash
-npm run dev       # Start development server (http://localhost:3000)
-npm run build     # Create production build
-npm run start     # Start production server
-npm run lint      # Run ESLint
+npm run dev       # Dev server on http://localhost:3000 (Turbopack)
+npm run build     # Production build (output: standalone) — runs TypeScript checking
+npm run start     # Start the standalone build
+npx tsc --noEmit  # Type-check only
 ```
+
+> **No test runner is configured.** Verify changes by running `npm run build` and exercising the affected pages with `npm run dev`.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 u-blog/
 ├── app/
-│   ├── adminos/                    # Admin panel (auth-protected)
-│   │   ├── login/                  # Admin login page
+│   ├── adminos/                          # Admin panel (proxy-guarded)
+│   │   ├── login/                        # Admin login (cookie-based session)
 │   │   └── dashboard/
-│   │       ├── posts/              # Post list, create new, edit [id]
-│   │       ├── profile/            # Profile settings
-│   │       ├── prompts/            # AI prompts manager
-│   │       └── buildings/          # Academic works manager
-│   ├── blog/
-│   │   ├── page.tsx                # Blog listing (timeline by year)
-│   │   └── [slug]/page.tsx         # Individual blog post
-│   ├── tags/
-│   │   ├── page.tsx                # All tags overview
-│   │   └── [tag]/page.tsx          # Posts filtered by tag
-│   ├── tools/
-│   │   ├── glsl-previewer/         # GLSL shader editor
-│   │   ├── threejs-previewer/      # Three.js 3D scene editor
-│   │   └── markdown-preview/       # Markdown editor
-│   ├── prompts/                    # Public prompts collection
-│   ├── privacy/                    # Privacy policy
+│   │       ├── posts/                    # List, new, [id]/edit
+│   │       ├── profile/                  # Profile, social links, GitHub repos
+│   │       ├── prompts/                  # AI prompts manager
+│   │       └── buildings/                # Academic works manager
 │   ├── api/
-│   │   ├── revalidate/             # On-demand ISR revalidation
-│   │   └── seo-autocomplete/       # A.C.S.I AI endpoint
-│   ├── layout.tsx                  # Root layout (Outfit font, SEO, JSON-LD)
-│   ├── page.tsx                    # Homepage / portfolio
-│   ├── sitemap.ts                  # Dynamic sitemap generation
-│   ├── robots.ts                   # Robots.txt generation
-│   └── globals.css                 # Glassmorphism & animation utilities
+│   │   ├── revalidate/                   # On-demand ISR revalidation (cookie-auth)
+│   │   └── seo-autocomplete/             # A.C.S.I Groq endpoint
+│   ├── blog/
+│   │   ├── page.tsx                      # Blog listing (timeline by year)
+│   │   └── [slug]/page.tsx               # Individual blog post
+│   ├── tags/                             # All tags + per-tag listing
+│   ├── tools/
+│   │   ├── ascii-converter/
+│   │   ├── background-remove/
+│   │   ├── converter/
+│   │   ├── glsl-previewer/
+│   │   ├── image-enhancer/
+│   │   ├── markdown-preview/
+│   │   ├── merge/
+│   │   ├── resizer/
+│   │   └── threejs-previewer/
+│   ├── prompts/                          # Public prompts collection
+│   ├── privacy/
+│   ├── layout.tsx                        # Root layout (Outfit, SEO, JSON-LD)
+│   ├── page.tsx                          # Homepage / portfolio
+│   ├── sitemap.ts                        # Dynamic sitemap
+│   ├── robots.ts                         # robots.txt
+│   └── globals.css                       # Glassmorphism & animation utilities
 ├── components/
-│   ├── ui/                         # 50+ shadcn/ui components
-│   ├── background.tsx              # Animated gradient orb background
-│   ├── glsl-canvas.tsx             # WebGL shader renderer
-│   ├── glsl-editor.tsx             # GLSL code editor
-│   ├── threejs-canvas.tsx          # Three.js 3D canvas
-│   ├── threejs-editor.tsx          # Three.js code editor
-│   ├── markdown-preview.tsx        # Markdown preview component
-│   ├── serp-preview.tsx            # Google SERP preview widget
-│   ├── seo-suggestions.tsx         # Smart SEO suggestions panel
-│   ├── language-switcher.tsx       # Multi-language post switcher
-│   ├── social-share.tsx            # Social sharing buttons
-│   ├── related-posts.tsx           # Related posts by tags
-│   └── ...                         # Other shared components
+│   ├── ui/                               # shadcn/ui primitives
+│   ├── glsl-canvas.tsx · glsl-editor.tsx
+│   ├── threejs-canvas.tsx · threejs-editor.tsx
+│   ├── ascii-converter.tsx
+│   ├── markdown-preview.tsx
+│   ├── serp-preview.tsx                  # Google SERP preview widget
+│   ├── seo-suggestions.tsx               # Smart SEO suggestions panel
+│   ├── language-switcher.tsx
+│   ├── related-posts.tsx
+│   └── ...
 ├── lib/
-│   └── supabase/
-│       ├── config.ts               # Supabase client + TypeScript types
-│       └── database.types.ts       # Auto-generated DB types
-├── middleware.ts                    # Auth guard + visit analytics
-├── env.mjs                         # Environment validation (t3-env)
-├── next.config.js                  # Next.js config (standalone, optimizations)
+│   ├── supabase/
+│   │   ├── client.ts                     # Browser client (createBrowserClient)
+│   │   ├── server.ts                     # Server client (createServerClient + cookies)
+│   │   ├── config.ts                     # Public read-only client + shared types
+│   │   ├── auth.ts                       # getAdminSession, requireAdmin, verifyBearerAdmin
+│   │   ├── database.types.ts             # Auto-generated DB types
+│   │   └── schema.sql                    # Bootstrap schema (out of date — trust types.ts)
+│   ├── ascii/                            # ASCII converter (CPU + WebGPU + Worker)
+│   ├── enhancer/                         # AI upscaler (HF transformers + Lanczos3)
+│   ├── file-merge.ts                     # TXT/PDF/DOC/DOCX merge engine (pdf-lib, mammoth, docx)
+│   ├── sanitize.ts                       # DOMPurify wrapper for post content
+│   ├── slug.ts                           # generateSlug, normalizeManualSlug
+│   ├── site.ts                           # siteUrl, toAbsoluteSiteUrl, resolveCanonicalUrl
+│   ├── tools-config.ts                   # Single source for the /tools index
+│   ├── tool-media.ts · file-utils.ts     # Canvas/blob/format helpers
+│   └── utils.ts
+├── hooks/
+│   └── use-supabase.ts                   # useSupabaseAuth (cookie-based getUser)
+├── proxy.ts                              # Auth guard + visit analytics (Next.js 16)
+├── env.mjs                               # Environment validation (t3-env)
+├── next.config.js                        # Standalone output, image config
 ├── package.json
 └── tsconfig.json
 ```
 
 ---
 
-## Database Schema
+## Database schema
 
 | Table | Purpose |
 |:------|:--------|
@@ -228,9 +282,21 @@ u-blog/
 | `buildings` | Academic works and projects with ordering |
 | `github_repos` | GitHub repositories with selection toggle for homepage showcase |
 | `prompts` | AI prompt collection — title, content, optional image |
-| `visits` | Page visit analytics — pathname tracking via middleware |
+| `visits` | Page-visit analytics — pathname tracking via the proxy |
 
 All tables have **Row Level Security (RLS)** enabled with policies for public reads and authenticated writes.
+
+> ⚠️ `lib/supabase/schema.sql` is the original bootstrap and is out of date relative to the live schema (which includes SEO columns, `language_code`, `translations`, etc.). Trust `lib/supabase/database.types.ts` and regenerate it with `supabase gen types` when the schema changes.
+
+Storage buckets: **`blog-images`** (post images, OG images, prompt covers) and **`blog-audio`** (post audio uploads).
+
+---
+
+## Deployment
+
+The build is configured for **standalone output** (`next.config.js`), so the project is ready for container deployments (Docker, Railway, Fly.io, etc.). For Vercel, the standalone setting is harmless and you can deploy as-is.
+
+`next.config.js` sets `images.unoptimized: true` and `remotePatterns: '**'` — `<Image>` is used for layout/lazy-loading only, not transformation. Don't add `next/image` `loader` configs expecting Vercel-style optimization.
 
 ---
 

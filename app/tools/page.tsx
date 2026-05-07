@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, Scissors, Image as ImageIcon, Sparkles, ScanLine, RefreshCw, type LucideIcon } from 'lucide-react'
+import { FileText, Code2, Palette, Calculator, ArrowRight, Box, ArrowLeft, Scissors, Image as ImageIcon, Sparkles, ScanLine, RefreshCw, Combine, type LucideIcon } from 'lucide-react'
 import { TOOLS } from '@/lib/tools-config'
 import { SEOBreadcrumb } from '@/components/ui/seo-breadcrumb'
 import { env } from '@/env.mjs'
@@ -41,6 +41,7 @@ const iconMap: Record<string, LucideIcon> = {
   Image: ImageIcon,
   ScanLine,
   RefreshCw,
+  Combine,
 }
 
 export default function ToolsPage() {

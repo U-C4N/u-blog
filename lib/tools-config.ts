@@ -61,6 +61,16 @@ export const TOOLS: ToolConfig[] = [
     status: 'active'
   },
   {
+    id: 'merge',
+    title: 'File Merger',
+    description: 'Merge TXT, PDF, DOC and DOCX files into a single document. Auto-detects each format, lets you reorder pieces, and stitches everything together in your browser.',
+    href: '/tools/merge',
+    iconName: 'Combine',
+    category: 'Utility',
+    tags: ['merge', 'pdf', 'docx', 'doc', 'txt', 'combine'],
+    status: 'active'
+  },
+  {
     id: 'markdown-preview',
     title: 'Markdown Preview',
     description: 'Preview and edit your Markdown content live. Test your writing with real-time rendering.',
