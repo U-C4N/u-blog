@@ -16,7 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Pencil, AlertCircle, Loader2, ImagePlus, Trash2 } from "lucide-react";
-import { getSupabaseBrowser, Prompt } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/client";
+import type { Prompt } from "@/lib/supabase/config";
 import { useRouter } from "next/navigation";
 
 interface EditPromptDialogProps {
@@ -33,7 +34,7 @@ export default function EditPromptDialog({ prompt }: EditPromptDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const supabase = getSupabaseBrowser();
+  const supabase = createClient();
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;

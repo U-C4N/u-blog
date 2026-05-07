@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
-import { getSupabaseBrowser } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 interface DeletePromptButtonProps {
@@ -25,7 +25,7 @@ export default function DeletePromptButton({ promptId }: DeletePromptButtonProps
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const supabase = getSupabaseBrowser();
+  const supabase = createClient();
 
   const handleDelete = async () => {
     setIsLoading(true);

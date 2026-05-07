@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Code2, LogOut, PenSquare, User, MessageSquare } from 'lucide-react'
 import { Section } from '@/components/section'
 import { ProjectLink } from '@/components/project-link'
-import { getSupabaseBrowser } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       await supabase.auth.signOut()
       router.push('/adminos/login')
       router.refresh()

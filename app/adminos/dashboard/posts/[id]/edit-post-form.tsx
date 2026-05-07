@@ -5,32 +5,23 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Eye, Edit2, Image as ImageIcon, Loader2, Music, ImagePlus, Link as LinkIcon, EyeOff, Sparkles, Globe, Plus } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getSupabaseBrowser, type Post } from '../../../../../lib/supabase/config'
-import DOMPurify from 'isomorphic-dompurify'
+import { createClient } from '@/lib/supabase/client'
+import type { Post } from '@/lib/supabase/config'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
-import rehypeRaw from 'rehype-raw' // Added import for rehypeRaw
-import 'katex/dist/katex.min.css' // KaTeX CSS
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import rehypeRaw from 'rehype-raw'
+import 'katex/dist/katex.min.css'
 import dynamic from 'next/dynamic'
 import { SerpPreview } from '@/components/serp-preview'
 import { SeoSuggestions } from '@/components/seo-suggestions'
 import { resolveCanonicalUrl, siteUrl, toAbsoluteSiteUrl } from '@/lib/site'
+import { sanitizePostContent } from '@/lib/sanitize'
+import { generateSlug, normalizeManualSlug } from '@/lib/slug'
 
-// Hoisted regex patterns (created once, reused everywhere)
-const SLUG_PATTERN = /[^a-z0-9]+/g
-const SLUG_TRIM_PATTERN = /(^-|-$)/g
 const WORD_SPLIT_PATTERN = /\s+/
 
-// Utility function for generating slugs (uses hoisted patterns)
-const generateSlug = (text: string): string => {
-  return text.toLowerCase().replace(SLUG_PATTERN, '-').replace(SLUG_TRIM_PATTERN, '')
-}
-
-// Dynamic import for MDEditor
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => mod.default),
   { ssr: false }
@@ -40,29 +31,15 @@ interface EditPostFormProps {
   initialPost: Post
 }
 
-const checkSupabaseConnection = async () => {
-  const supabase = getSupabaseBrowser()
-  const { data, error } = await supabase.from('posts').select('count').single()
-  if (error) throw new Error('Supabase connection failed')
-  return true
-}
-
 const validateTitle = (title: string) => {
-  if (title.length < 3) throw new Error('Title must be at least 3 characters')
+  if (title.trim().length < 3) throw new Error('Title must be at least 3 characters')
   return true
 }
 
 const validateContent = (content: string) => {
-  if (content.length < 10) throw new Error('Content must be at least 10 characters')
-  if (content.length > 50000) throw new Error('Content must be less than 50000 characters')
+  if (content.trim().length < 10) throw new Error('Content must be at least 10 characters')
+  if (content.length > 50000) throw new Error('Content must be less than 50,000 characters')
   return true
-}
-
-const sanitizeContent = (content: string): string => {
-  return DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'code', 'pre', 'blockquote', 'audio'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'controls', 'src']
-  })
 }
 
 export function EditPostForm({ initialPost }: EditPostFormProps) {
@@ -131,16 +108,18 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   }, [title, content, isPublished, initialCanonicalUrl, initialPost, customSlug, tagsInput, metaTitle, metaDescription, canonicalUrl, ogImageUrl, noindex])
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        await checkSupabaseConnection()
-        setIsConnected(true)
-      } catch (err: any) {
-        console.error('Initialization error:', err)
-        setError(err.message)
+    let cancelled = false
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data, error: authError }) => {
+      if (cancelled) return
+      if (authError || !data.user) {
+        setError('Authentication expired. Please log in again.')
+        setIsConnected(false)
+        return
       }
-    }
-    init()
+      setIsConnected(true)
+    })
+    return () => { cancelled = true }
   }, [])
 
   // Memoize stats to avoid recalculating on every render
@@ -162,17 +141,13 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
   }, [title, isSlugTouched])
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow hyphens in manual input, but still trim leading/trailing
-    const value = e.target.value
-      .toLowerCase()
-      .replace(/[^a-z0-9-]+/g, '-')
-      .replace(SLUG_TRIM_PATTERN, '')
-    setCustomSlug(value)
+    setCustomSlug(normalizeManualSlug(e.target.value))
     setIsSlugTouched(true)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSaving) return
     if (!isConnected) {
       setError('Please wait for connection to be established')
       return
@@ -182,76 +157,68 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setError(null)
 
     try {
-      // Validasyon
       validateTitle(title)
       validateContent(content)
-      
-      // Content sanitization
-      const sanitizedContent = sanitizeContent(content)
-      
-      const supabase = getSupabaseBrowser()
-      console.log('Updating post:', { title, content: sanitizedContent, isPublished, id: initialPost.id })
-      
-      // Save current content to translations before submitting
-      let finalTranslations = { ...translations }
+
+      const sanitizedContent = sanitizePostContent(content)
+      const supabase = createClient()
+
+      const finalSlug = customSlug || generateSlug(title)
+      if (!finalSlug) throw new Error('Title must include letters or numbers to build a slug')
+
+      const finalTranslations = { ...translations }
       if (currentLanguage !== 'en') {
         finalTranslations[currentLanguage] = {
-          title: title,
+          title,
           content: sanitizedContent,
-          slug: customSlug || generateSlug(title)
+          slug: finalSlug,
         }
       }
 
-      // Prepare update payload with explicit typing
-      const updatePayload: Partial<Post> = {
+      const updatePayload = {
         title: currentLanguage === 'en' ? title : originalTitle,
         content: currentLanguage === 'en' ? sanitizedContent : originalContent,
-        slug: currentLanguage === 'en' ? (customSlug || generateSlug(title)) : initialPost.slug,
+        slug: currentLanguage === 'en' ? finalSlug : initialPost.slug,
         published: isPublished,
-        tags: tagsInput.split(',').map(t => t.trim()).filter(Boolean),
+        tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
         meta_title: metaTitle || title,
         meta_description: metaDescription,
-        canonical_url: resolveCanonicalUrl(canonicalUrl, `/blog/${customSlug || generateSlug(title)}`),
-        og_image_url: ogImageUrl || undefined,
+        canonical_url: resolveCanonicalUrl(canonicalUrl, `/blog/${finalSlug}`),
+        og_image_url: ogImageUrl || null,
         noindex,
         language_code: 'en',
         translations: finalTranslations,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from('posts')
         .update(updatePayload)
         .eq('id', initialPost.id)
-        .select('*')
+        .select('id')
+        .single()
 
-      if (error) {
-        console.error('Supabase error details:', error)
-        throw error
+      if (updateError) {
+        console.error('Supabase update error:', updateError)
+        throw updateError
       }
 
-      console.log('Update response:', data)
-      // Ping Google sitemap & revalidate blog pages (fire-and-forget)
-      const session = await supabase.auth.getSession()
-      const accessToken = session.data.session?.access_token
+      // Revalidate blog pages (cookie-authenticated server route).
+      fetch('/api/revalidate', { method: 'POST' }).catch((err) =>
+        console.warn('Revalidate ping failed:', err),
+      )
       fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})
-      if (accessToken) {
-        fetch('/api/revalidate', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => {})
-      }
+
       router.refresh()
       router.push('/adminos/dashboard/posts')
     } catch (err: any) {
       console.error('Error updating post:', {
-        message: err.message,
-        details: err.details,
-        hint: err.hint,
-        code: err.code
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
       })
-      setError(`Failed to update post: ${err.message || 'Unknown error'}`)
+      setError(`Failed to update post: ${err?.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false)
     }
@@ -298,7 +265,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setError(null)
 
     try {
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       
       // Generate unique file name
       const fileExt = file.name.split('.').pop()
@@ -370,7 +337,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setError(null)
 
     try {
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       
       // Generate unique file name
       const fileExt = file.name.split('.').pop()
@@ -436,7 +403,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setIsUploading(true)
     setError(null)
     try {
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       const fileExt = file.name.split('.').pop()
       const fileName = `og-${Math.random().toString(36).substring(2)}.${fileExt}`
       const { error } = await supabase.storage.from('blog-images').upload(`og/${fileName}`, file, { cacheControl: '3600', upsert: false })
@@ -459,21 +426,12 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
     setIsSEOGenerating(true)
     setError(null)
     try {
-      const supabase = getSupabaseBrowser()
-      const session = await supabase.auth.getSession()
-      const accessToken = session.data.session?.access_token
-      if (!accessToken) {
-        throw new Error('Authentication expired. Please log in again.')
-      }
-
       const res = await fetch('/api/seo-autocomplete', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content }),
       })
+      if (res.status === 401) throw new Error('Authentication expired. Please log in again.')
       if (!res.ok) throw new Error('A.C.S.I request failed')
       const data = await res.json()
       if (data.metaTitle) setMetaTitle(data.metaTitle)
@@ -694,10 +652,14 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        const newLang = prompt('Enter language code (e.g., zh, ja, ko):')
-                        if (newLang && newLang.length === 2) {
-                          setCurrentLanguage(newLang.toLowerCase())
+                        const raw = prompt('Enter ISO 639-1 language code (e.g., zh, ja, ko):')
+                        if (!raw) return
+                        const code = raw.trim().toLowerCase()
+                        if (!/^[a-z]{2}$/.test(code)) {
+                          setError('Language code must be exactly 2 lowercase letters (e.g., en, tr, zh)')
+                          return
                         }
+                        setCurrentLanguage(code)
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white/60 dark:bg-gray-800/60 text-purple-600 dark:text-purple-400 hover:bg-white dark:hover:bg-gray-800 rounded-lg border border-purple-200/50 dark:border-purple-700/50 transition-all duration-200 font-medium"
                     >

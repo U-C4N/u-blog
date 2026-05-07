@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { env } from '../../../env.mjs'
+import { createClient } from '@/lib/supabase/server'
+import { verifyBearerAdmin } from '@/lib/supabase/auth'
 
-// Minimal Groq client using fetch to call moonshotai/kimi-k2-instruct
-// We avoid adding SDK deps; use server-only route with GROQ_API_KEY from env
+const MAX_TITLE_LEN = 200
+const MAX_CONTENT_LEN = 100_000
 
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Cookie-based session (set by middleware) is the default; Bearer fallback
+    // keeps backward-compat for any client that still sends the token.
+    const supabase = await createClient()
+    let { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      user = await verifyBearerAdmin(req.headers.get('Authorization'))
     }
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
-    const token = authHeader.slice(7)
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -28,10 +24,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing GROQ_API_KEY' }, { status: 500 })
     }
 
-    const body = await req.json()
-    const { title, content } = body as { title: string; content: string }
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const { title, content } = (body as { title?: unknown; content?: unknown }) || {}
+
+    if (typeof title !== 'string' || typeof content !== 'string') {
+      return NextResponse.json({ error: 'title and content must be strings' }, { status: 400 })
+    }
     if (!title || !content) {
       return NextResponse.json({ error: 'Missing title or content' }, { status: 400 })
+    }
+    if (title.length > MAX_TITLE_LEN) {
+      return NextResponse.json({ error: `Title must be ≤ ${MAX_TITLE_LEN} chars` }, { status: 400 })
+    }
+    if (content.length > MAX_CONTENT_LEN) {
+      return NextResponse.json({ error: `Content must be ≤ ${MAX_CONTENT_LEN} chars` }, { status: 400 })
     }
 
     const prompt = `You are an SEO expert. Given a blog post title and full markdown content, produce concise SEO fields:
@@ -47,8 +58,8 @@ TITLE:\n${title}\n\nCONTENT:\n${content.substring(0, 8000)}`
     const requestedModel = 'moonshotai/kimi-k2-instruct'
     const fallbackModel = process.env.GROQ_FALLBACK_MODEL || 'llama-3.1-70b-versatile'
 
-    const callGroq = async (model: string) => {
-      return fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const callGroq = (model: string) =>
+      fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +76,6 @@ TITLE:\n${title}\n\nCONTENT:\n${content.substring(0, 8000)}`
           response_format: { type: 'json_object' },
         }),
       })
-    }
 
     let resp = await callGroq(requestedModel)
     if (!resp.ok) {
@@ -88,24 +98,24 @@ TITLE:\n${title}\n\nCONTENT:\n${content.substring(0, 8000)}`
 
     const data = await resp.json()
     const raw = data?.choices?.[0]?.message?.content
-    let parsed: any
+    let parsed: { metaTitle?: unknown; metaDescription?: unknown; tags?: unknown; noindex?: unknown } = {}
     try {
-      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+      parsed = typeof raw === 'string' ? JSON.parse(raw) : (raw ?? {})
     } catch {
       parsed = {}
     }
 
     const safe = {
-      metaTitle: typeof parsed?.metaTitle === 'string' ? parsed.metaTitle.slice(0, 80) : '',
-      metaDescription: typeof parsed?.metaDescription === 'string' ? parsed.metaDescription.slice(0, 180) : '',
-      tags: Array.isArray(parsed?.tags) ? parsed.tags.filter((t: any) => typeof t === 'string').slice(0, 10) : [],
-      noindex: typeof parsed?.noindex === 'boolean' ? parsed.noindex : false,
+      metaTitle: typeof parsed.metaTitle === 'string' ? parsed.metaTitle.slice(0, 80) : '',
+      metaDescription: typeof parsed.metaDescription === 'string' ? parsed.metaDescription.slice(0, 180) : '',
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.filter((t): t is string => typeof t === 'string').slice(0, 10)
+        : [],
+      noindex: typeof parsed.noindex === 'boolean' ? parsed.noindex : false,
     }
 
     return NextResponse.json(safe)
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Unexpected error' }, { status: 500 })
+    return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 })
   }
 }
-
-

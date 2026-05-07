@@ -1,5 +1,7 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { Database } from './database.types'
+import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
+import { createClient as createBrowserSSRClient } from './client'
 
 // These are safe to use on the client as they are prefixed with NEXT_PUBLIC
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -9,42 +11,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-// Server-side Supabase client (for API routes and server components)
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false
-  }
-})
-
-// Client-side Supabase client singleton (cached to avoid recreation)
-let browserClient: SupabaseClient<Database> | null = null
-
-export const getSupabaseBrowser = (): SupabaseClient<Database> => {
-  if (typeof window === 'undefined') {
-    throw new Error('getSupabaseBrowser can only be called in the browser')
-  }
-
-  // Return cached client if exists (prevents recreation on every call)
-  if (browserClient) {
-    return browserClient
-  }
-
-  browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Server-side Supabase client for public read-only paths (no session).
+// For authenticated server work, use lib/supabase/server.ts instead.
+export const supabase: SupabaseClient<Database> = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
     auth: {
-      persistSession: true,
-      storageKey: 'supabase.auth.token',
-      storage: window.localStorage
-    }
-  })
+      persistSession: false,
+    },
+  },
+)
 
-  return browserClient
-}
-
-// Initialize required storage buckets - Disabled since buckets already exist
-export const initStorageBuckets = async () => {
-  // Buckets already exist in the database, no need to recreate them
-  console.log('Storage buckets (blog-images, blog-audio) already configured');
-};
+// Backwards-compatible browser accessor. Delegates to the SSR-aware
+// createBrowserClient so the same auth cookies are visible to middleware.
+export const getSupabaseBrowser = (): SupabaseClient<Database> => createBrowserSSRClient()
 
 // Types
 export type Profile = {

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, ArrowLeft, AlertCircle, FileText, Calendar, Eye, MoreHorizontal } from 'lucide-react'
+import { Plus, Edit2, Trash2, ArrowLeft, AlertCircle, FileText, Calendar, Eye, MoreHorizontal, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { supabase, type Post } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
+import type { Post } from '@/lib/supabase/config'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +20,7 @@ export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPosts()
@@ -26,6 +28,7 @@ export default function PostsPage() {
 
   async function fetchPosts() {
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('posts')
         .select('*')
@@ -57,17 +60,25 @@ export default function PostsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    if (deletingId) return
+    setDeletingId(id)
+    setError(null)
+    const previous = posts
+    setPosts((prev) => prev.filter((post) => post.id !== id))
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('posts')
         .delete()
         .eq('id', id)
 
       if (error) throw error
-      setPosts(posts.filter(post => post.id !== id))
     } catch (err: any) {
       console.error('Error deleting post:', err)
-      setError('Failed to delete post')
+      setPosts(previous)
+      setError(err?.message || 'Failed to delete post')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -297,9 +308,14 @@ export default function PostsPage() {
                                 <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(post.id)}
+                                  disabled={deletingId === post.id}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                                 >
-                                  Delete
+                                  {deletingId === post.id ? (
+                                    <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Deleting…</span>
+                                  ) : (
+                                    'Delete'
+                                  )}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

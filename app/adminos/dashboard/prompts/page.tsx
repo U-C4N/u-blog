@@ -1,6 +1,8 @@
 import NextImage from "next/image";
 import Link from "next/link";
-import { supabase, Prompt } from "@/lib/supabase/config";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import type { Prompt } from "@/lib/supabase/config";
 import AddPromptButton from "./add-prompt-button";
 import EditPromptDialog from "./edit-prompt-dialog";
 import DeletePromptButton from "./delete-prompt-button";
@@ -26,7 +28,14 @@ function formatDate(dateString: string | undefined) {
 }
 
 export default async function PromptsPage() {
-  
+  const supabase = await createClient();
+
+  // Defense-in-depth: middleware also guards /adminos/* but never trust a single layer.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/adminos/login");
+  }
+
   const { data: promptsRaw, error } = await supabase
     .from("prompts")
     .select("*")

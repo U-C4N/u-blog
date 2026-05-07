@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
-import { notFound } from 'next/navigation'
-import { supabase, type Post } from '@/lib/supabase/config'
+import { notFound, redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import type { Post } from '@/lib/supabase/config'
 import { EditPostForm } from './edit-post-form'
 
 export const dynamic = 'force-dynamic'
@@ -16,15 +17,16 @@ type Props = {
 
 // React.cache for per-request deduplication (shared between generateMetadata and page)
 const getPost = cache(async (id: string): Promise<Post | null> => {
+  const supabase = await createClient()
   const { data } = await supabase
     .from('posts')
     .select('*')
     .eq('id', id)
     .single()
-  
+
   if (!data) return null
-  
-  // Veritabanından gelen nullable değerleri Post tipine uygun hale getir
+
+  // Map nullable DB columns to undefined to match Post type
   const transformedPost: Post = {
     ...data,
     content: data.content ?? '',
@@ -35,36 +37,31 @@ const getPost = cache(async (id: string): Promise<Post | null> => {
     canonical_url: data.canonical_url ?? undefined,
     og_image_url: data.og_image_url ?? undefined,
     noindex: data.noindex ?? undefined,
-    translations: data.translations ? (data.translations as { [key: string]: { title: string; content: string; slug: string } }) : undefined
+    translations: data.translations
+      ? (data.translations as { [key: string]: { title: string; content: string; slug: string } })
+      : undefined,
   }
-  
+
   return transformedPost
 })
 
-export async function generateStaticParams() {
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('id')
-
-  return (posts || []).map((post) => ({
-    id: post.id,
-  }))
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params
-  // Use cached getPost to deduplicate with page component
   const post = await getPost(resolvedParams.id)
 
   return {
     title: `Edit ${post?.title || 'Post'}`,
     description: `Edit post ${post?.title || ''}`,
+    robots: { index: false, follow: false },
   }
 }
 
 export default async function Page({ params }: Props) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/adminos/login')
+
   const resolvedParams = await params
-  // Use cached getPost - same request as generateMetadata won't re-fetch
   const post = await getPost(resolvedParams.id)
 
   if (!post) {

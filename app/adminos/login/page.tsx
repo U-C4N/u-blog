@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Code2 } from 'lucide-react'
-import { getSupabaseBrowser } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,17 +12,21 @@ export default function LoginPage() {
 
   // Check if already logged in
   useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = getSupabaseBrowser()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        router.push('/adminos/dashboard')
+    let cancelled = false
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data, error: authError }) => {
+      if (cancelled) return
+      if (!authError && data.user) {
+        router.replace('/adminos/dashboard')
       }
+    })
+    return () => {
+      cancelled = true
     }
-    checkAuth()
   }, [router])
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setIsLoading(true)
     setError('')
 
@@ -40,7 +44,7 @@ export default function LoginPage() {
 
     try {
       // Use Supabase Auth for login
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -78,7 +82,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={(e) => handleSubmit(e)} className="space-y-5">
               {error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-xl border border-destructive/20">
                   {error}
@@ -114,8 +118,7 @@ export default function LoginPage() {
               </div>
 
               <button
-                type="button"
-                onClick={handleSubmit}
+                type="submit"
                 disabled={isLoading}
                 className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 font-medium shadow-sm hover:shadow-md"
               >

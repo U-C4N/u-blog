@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Save, Plus, Trash2, AlertCircle, Building, Github, Check, User, Globe, Link as LinkIcon, Settings } from 'lucide-react'
 import Link from 'next/link'
-import { getSupabaseBrowser, type Profile, type Building as BuildingType, type GithubRepo } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
+import type { Profile, Building as BuildingType, GithubRepo } from '@/lib/supabase/config'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -44,7 +45,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isValidatingToken, setIsValidatingToken] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = getSupabaseBrowser()
+  const supabase = createClient()
 
   useEffect(() => {
     fetchData()
@@ -52,11 +53,26 @@ export default function ProfilePage() {
 
   async function fetchData() {
     try {
-      const [profileRes, buildingsRes, reposRes] = await Promise.all([
+      const [profileSettled, buildingsSettled, reposSettled] = await Promise.allSettled([
         supabase.from('profiles').select('*').limit(1).maybeSingle(),
         supabase.from('buildings').select('*').order('order_index'),
         supabase.from('github_repos').select('*')
       ]);
+
+      type SettledShape<T> = { data: T | null; error: unknown }
+      const profileRes: SettledShape<any> = profileSettled.status === 'fulfilled'
+        ? profileSettled.value
+        : { data: null, error: profileSettled.reason }
+      const buildingsRes: SettledShape<any[]> = buildingsSettled.status === 'fulfilled'
+        ? buildingsSettled.value as any
+        : { data: null, error: buildingsSettled.reason }
+      const reposRes: SettledShape<any[]> = reposSettled.status === 'fulfilled'
+        ? reposSettled.value as any
+        : { data: null, error: reposSettled.reason }
+
+      if (profileRes.error) console.error('Profile fetch failed:', profileRes.error)
+      if (buildingsRes.error) console.error('Buildings fetch failed:', buildingsRes.error)
+      if (reposRes.error) console.error('Repos fetch failed:', reposRes.error)
 
       if (profileRes.data) {
         // social_links tipini kontrol et ve dönüştür

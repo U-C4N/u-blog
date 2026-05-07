@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, Edit2, Trash2, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
-import { supabase, type Building } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
+import type { Building } from '@/lib/supabase/config'
 
 export default function BuildingsPage() {
-  const router = useRouter()
   const [buildings, setBuildings] = useState<Building[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchBuildings()
@@ -18,6 +18,7 @@ export default function BuildingsPage() {
 
   async function fetchBuildings() {
     try {
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('buildings')
         .select('*')
@@ -45,17 +46,26 @@ export default function BuildingsPage() {
   }
 
   async function handleDelete(id: string) {
+    if (deletingId) return
+    if (!confirm('Delete this building?')) return
+    setDeletingId(id)
+    setError(null)
+    const previous = buildings
+    setBuildings((prev) => prev.filter((b) => b.id !== id))
     try {
+      const supabase = createClient()
       const { error } = await supabase
         .from('buildings')
         .delete()
         .eq('id', id)
 
       if (error) throw error
-      fetchBuildings()
     } catch (err: any) {
       console.error('Error deleting building:', err)
-      setError(err.message)
+      setBuildings(previous)
+      setError(err?.message || 'Failed to delete building')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -122,9 +132,10 @@ export default function BuildingsPage() {
               </Link>
               <button
                 onClick={() => handleDelete(building.id)}
-                className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                disabled={deletingId === building.id}
+                className="p-2 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" />
+                {deletingId === building.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               </button>
             </div>
           </div>

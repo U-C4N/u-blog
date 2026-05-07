@@ -1,22 +1,20 @@
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { verifyBearerAdmin } from '@/lib/supabase/auth'
 
 export async function POST(request: Request) {
-  // Verify the caller is an authenticated admin
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Prefer cookie-based session (set by middleware on every nav). Fall back to
+  // legacy Bearer header for older client code paths.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let authedUser = user
+  if (!authedUser) {
+    authedUser = await verifyBearerAdmin(request.headers.get('Authorization'))
   }
 
-  const token = authHeader.slice(7)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-
-  if (error || !user) {
+  if (!authedUser) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

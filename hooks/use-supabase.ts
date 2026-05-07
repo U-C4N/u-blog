@@ -1,52 +1,36 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getSupabaseBrowser } from '@/lib/supabase/config'
-
-type UserData = {
-  id: string
-  email?: string
-  [key: string]: any
-}
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 
 export function useSupabaseAuth() {
-  const [user, setUser] = useState<UserData | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Use the browser client for auth
-    const supabase = getSupabaseBrowser()
-    
-    // Check for existing session
-    const checkSession = async () => {
-      try {
-        // @ts-ignore - Ignore type errors due to version mismatch
-        const { data } = await supabase.auth.getSession()
-        setUser(data?.session?.user ?? null)
-        setLoading(false)
-      } catch (error) {
-        console.error('Error checking session:', error)
-        setLoading(false)
-      }
-    }
-    
-    checkSession()
+    let cancelled = false
+    const supabase = createClient()
 
-    // Set up a listener for auth changes
-    try {
-      // @ts-ignore - Ignore type errors due to version mismatch
-      const authListener = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-        setUser(session?.user ?? null)
-      })
-
-      return () => {
-        if (authListener?.data?.subscription?.unsubscribe) {
-          authListener.data.subscription.unsubscribe()
-        }
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (cancelled) return
+      if (error) {
+        console.error('Error checking auth:', error)
+        setUser(null)
+      } else {
+        setUser(data.user ?? null)
       }
-    } catch (error) {
-      console.error('Error setting up auth listener:', error)
-      return () => {}
+      setLoading(false)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return
+      setUser(session?.user ?? null)
+    })
+
+    return () => {
+      cancelled = true
+      listener.subscription.unsubscribe()
     }
   }, [])
 

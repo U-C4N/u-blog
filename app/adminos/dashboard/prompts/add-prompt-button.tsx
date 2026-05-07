@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, AlertCircle, Loader2, ImagePlus, Trash2 } from "lucide-react";
-import { getSupabaseBrowser } from "@/lib/supabase/config";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 export default function AddPromptButton() {
@@ -29,7 +29,7 @@ export default function AddPromptButton() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const supabase = getSupabaseBrowser();
+  const supabase = createClient();
 
   const handleImageUpload = async (file: File) => {
     if (!file) return;

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { getSupabaseBrowser } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
 
 export default function NewBuildingPage() {
@@ -26,7 +26,7 @@ export default function NewBuildingPage() {
     }
 
     try {
-      const supabase = getSupabaseBrowser()
+      const supabase = createClient()
       const { error } = await supabase
         .from('buildings')
         .insert(building)

@@ -1,22 +1,29 @@
-import { supabase } from './config'
+import 'server-only'
+import { cache } from 'react'
+import { redirect } from 'next/navigation'
+import { createClient } from './server'
+import type { User } from '@supabase/supabase-js'
 
-export async function signIn(email: string, password: string) {
-  // @ts-ignore - Ignore type error due to Supabase version mismatch
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-  return { data, error }
+export const getAdminSession = cache(async () => {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return { user: null as User | null, supabase }
+  return { user, supabase }
+})
+
+export async function requireAdmin() {
+  const { user, supabase } = await getAdminSession()
+  if (!user) redirect('/adminos/login')
+  return { user, supabase }
 }
 
-export async function signOut() {
-  // @ts-ignore - Ignore type error due to Supabase version mismatch
-  const { error } = await supabase.auth.signOut()
-  return { error }
-}
+export async function verifyBearerAdmin(authHeader: string | null): Promise<User | null> {
+  if (!authHeader?.startsWith('Bearer ')) return null
+  const token = authHeader.slice(7).trim()
+  if (!token) return null
 
-export async function getSession() {
-  // @ts-ignore - Ignore type error due to Supabase version mismatch
-  const { data: { session }, error } = await supabase.auth.getSession()
-  return { session, error }
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+  if (error || !user) return null
+  return user
 }

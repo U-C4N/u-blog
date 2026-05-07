@@ -1,26 +1,20 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Save, AlertCircle, Image as ImageIcon, Music, Loader2, Link as LinkIcon, ImagePlus, EyeOff, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import DOMPurify from 'isomorphic-dompurify'
-import { getSupabaseBrowser } from '../../../../../lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
 import { SerpPreview } from '@/components/serp-preview'
 import { SeoSuggestions } from '@/components/seo-suggestions'
 import { resolveCanonicalUrl, siteUrl, toAbsoluteSiteUrl } from '@/lib/site'
-
-const sanitizeContent = (value: string): string => {
-  return DOMPurify.sanitize(value, {
-    ALLOWED_TAGS: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'code', 'pre', 'blockquote', 'audio'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'controls', 'src']
-  })
-}
+import { sanitizePostContent } from '@/lib/sanitize'
+import { generateSlug } from '@/lib/slug'
 
 export default function NewPostPage() {
   const router = useRouter()
-  const supabase = getSupabaseBrowser()
+  const supabase = createClient()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isPublished, setIsPublished] = useState(false)
@@ -46,10 +40,7 @@ export default function NewPostPage() {
 
   // Auto-update canonical URL from title/slug unless user manually edits it
   React.useEffect(() => {
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '')
+    const slug = generateSlug(title)
     if (!canonicalTouched) {
       setCanonicalUrl(toAbsoluteSiteUrl(`/blog/${slug}`))
     }
@@ -57,35 +48,38 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSaving) return
     setIsSaving(true)
     setError(null)
 
     try {
-      const sanitizedContent = sanitizeContent(content)
+      const sanitizedContent = sanitizePostContent(content)
 
-      // Create URL-friendly slug from title and ensure uniqueness
-      const baseSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
+      const baseSlug = generateSlug(title)
+      if (!baseSlug) {
+        throw new Error('Title must include letters or numbers to build a slug')
+      }
 
+      // Find a unique slug. Race-resilient: DB has UNIQUE(slug); we still try a few up front.
       let slug = baseSlug
-      try {
-        // If slug exists, append incremental suffix -2, -3, ...
-        let suffix = 2
-        // Check up to 20 variants quickly
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data: existing } = await supabase
-            .from('posts')
-            .select('id')
-            .eq('slug', slug)
-            .limit(1)
-          if (!existing || existing.length === 0) break
-          slug = `${baseSlug}-${suffix++}`
-          if (suffix > 50) break
+      let suffix = 2
+      const MAX_ATTEMPTS = 50
+      while (suffix <= MAX_ATTEMPTS) {
+        const { data: existing, error: lookupError } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('slug', slug)
+          .limit(1)
+        if (lookupError) {
+          console.error('Slug uniqueness check failed:', lookupError)
+          break
         }
-      } catch {}
+        if (!existing || existing.length === 0) break
+        slug = `${baseSlug}-${suffix++}`
+      }
+      if (suffix > MAX_ATTEMPTS) {
+        slug = `${baseSlug}-${Date.now().toString(36)}`
+      }
 
       const { error } = await supabase
         .from('posts')
@@ -109,22 +103,17 @@ export default function NewPostPage() {
 
       if (error) throw error
 
-      // Ping Google sitemap & revalidate blog pages (fire-and-forget)
-      const session = await supabase.auth.getSession()
-      const accessToken = session.data.session?.access_token
+      // Revalidate blog pages (cookie-authenticated server route).
+      fetch('/api/revalidate', { method: 'POST' }).catch((err) =>
+        console.warn('Revalidate ping failed:', err),
+      )
       fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})
-      if (accessToken) {
-        fetch('/api/revalidate', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }).catch(() => {})
-      }
 
       router.push('/adminos/dashboard/posts')
       router.refresh()
     } catch (err: any) {
       console.error('Error creating post:', err)
-      setError(err.message)
+      setError(err?.message || 'Failed to create post')
       setIsSaving(false)
     }
   }
@@ -312,20 +301,12 @@ export default function NewPostPage() {
     setIsSEOGenerating(true)
     setError(null)
     try {
-      const session = await supabase.auth.getSession()
-      const accessToken = session.data.session?.access_token
-      if (!accessToken) {
-        throw new Error('Authentication expired. Please log in again.')
-      }
-
       const res = await fetch('/api/seo-autocomplete', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content }),
       })
+      if (res.status === 401) throw new Error('Authentication expired. Please log in again.')
       if (!res.ok) throw new Error('A.C.S.I request failed')
       const data = await res.json()
       if (data.metaTitle) setMetaTitle(data.metaTitle)
@@ -429,7 +410,7 @@ export default function NewPostPage() {
                   <div className="mt-3 text-xs text-muted-foreground flex items-center gap-1">
                     <LinkIcon className="w-3 h-3" />
                     <span className="opacity-60">{baseUrl}/blog/</span>
-                    <span className="font-mono text-foreground">{title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}</span>
+                    <span className="font-mono text-foreground">{generateSlug(title)}</span>
                   </div>
                 )}
               </div>
@@ -668,7 +649,7 @@ export default function NewPostPage() {
               title={title}
               metaTitle={metaTitle}
               metaDescription={metaDescription}
-              slug={title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}
+              slug={generateSlug(title)}
               siteUrl={siteUrl}
             />
 

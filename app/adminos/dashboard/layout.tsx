@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSupabaseBrowser } from '@/lib/supabase/config'
+import { createClient } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 
 export default function DashboardLayout({
@@ -15,31 +15,31 @@ export default function DashboardLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = getSupabaseBrowser()
-      const { data: { session } } = await supabase.auth.getSession()
+    let cancelled = false
+    const supabase = createClient()
 
-      if (!session) {
-        router.push('/adminos/login')
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (cancelled) return
+      if (error || !data.user) {
+        router.replace('/adminos/login')
         return
       }
-
       setIsAuthenticated(true)
       setIsLoading(false)
+    })
 
-      // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (!session) {
-          router.push('/adminos/login')
-        }
-      })
-
-      return () => {
-        subscription.unsubscribe()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return
+      if (!session) {
+        setIsAuthenticated(false)
+        router.replace('/adminos/login')
       }
-    }
+    })
 
-    checkAuth()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [router])
 
   if (isLoading) {
