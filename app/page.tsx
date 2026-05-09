@@ -188,6 +188,8 @@ export default async function Home() {
                   alt="Umutcan Edizaslan"
                   width={360}
                   height={439}
+                  priority
+                  fetchPriority="high"
                   sizes="(min-width: 640px) 120px, 90px"
                   className="relative z-50 w-[90px] sm:w-[120px] h-auto transition-all duration-500 group-hover:brightness-110 group-hover:scale-105 group-hover:drop-shadow-[0_0_25px_rgba(255,255,255,0.7)]"
                 />

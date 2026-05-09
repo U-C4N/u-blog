@@ -18,6 +18,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: toAbsoluteSiteUrl('/tools/markdown-preview'), changeFrequency: 'monthly', priority: 0.6 },
     { url: toAbsoluteSiteUrl('/tools/glsl-previewer'), changeFrequency: 'monthly', priority: 0.6 },
     { url: toAbsoluteSiteUrl('/tools/threejs-previewer'), changeFrequency: 'monthly', priority: 0.6 },
+    { url: toAbsoluteSiteUrl('/tools/background-remove'), changeFrequency: 'monthly', priority: 0.6 },
+    { url: toAbsoluteSiteUrl('/tools/converter'), changeFrequency: 'monthly', priority: 0.6 },
+    { url: toAbsoluteSiteUrl('/tools/image-enhancer'), changeFrequency: 'monthly', priority: 0.6 },
+    { url: toAbsoluteSiteUrl('/tools/merge'), changeFrequency: 'monthly', priority: 0.6 },
+    { url: toAbsoluteSiteUrl('/tools/resizer'), changeFrequency: 'monthly', priority: 0.6 },
   ]
 
   const postRoutes: MetadataRoute.Sitemap = (posts || [])

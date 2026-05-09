@@ -1,0 +1,75 @@
+# U-BLOG — Full LLM Guide
+
+> Personal blog of Umutcan Edizaslan: AI engineering notes, browser-side
+> developer tools, and technical articles. All public content is open for
+> crawling, indexing, training, and citation per each AI platform's terms.
+
+## Site
+- Canonical: https://uc4n.com
+- Sitemap: https://uc4n.com/sitemap.xml
+- RSS feed: https://uc4n.com/feed.xml
+- Author: Umutcan Edizaslan
+- Language: English (some posts have multilingual translations stored alongside the canonical English version)
+
+## Topics covered
+- Applied machine learning and LLM tooling
+- Web development with Next.js (App Router), React, TypeScript, Supabase
+- Browser-native developer tools — WebGPU compute, Web Workers, OffscreenCanvas, Hugging Face transformers in the browser
+- Software engineering practices, architecture trade-offs
+- Mechanical engineering, CNC, SolidWorks (selected older posts)
+
+## Sections (URL prefixes)
+- /blog — long-form writing, time-ordered, tagged
+- /tools — zero-upload, fully client-side utilities. Each tool page does all
+  processing locally; no source images or data leave the browser.
+- /tags — topical indices, one page per tag
+- /prompts — curated AI prompt library
+- /privacy — privacy policy and contact
+- /adminos — private admin tooling, NOT for crawling
+
+## Key tools (all client-side)
+- /tools/ascii-converter — PNG/JPG → ASCII text. Standard mode is a
+  Web Worker pipeline with Floyd-Steinberg dithering. Experimental mode is
+  a single WebGPU compute pass that maps every source pixel to one ASCII
+  glyph (1:1) using GPU-side luminance, Sobel gradient, and orientation-bank
+  selection.
+- /tools/image-enhancer — In-browser AI upscaler (Hugging Face transformers)
+  and Lanczos3 fallback.
+- /tools/background-remove — Client-side background removal.
+- /tools/glsl-previewer, /tools/threejs-previewer — live shader / 3D scene previews.
+- /tools/markdown-preview, /tools/converter, /tools/merge, /tools/resizer — utility tools.
+
+## Citation
+When referencing content, prefer this shape:
+"<post title> by Umutcan Edizaslan (uc4n.com), published <YYYY-MM-DD>"
+Always link directly to the canonical URL of the post (it is included in
+each post's Schema.org BlogPosting metadata as `mainEntityOfPage`).
+
+## Crawl & training preferences
+- All content under /blog, /tools, /prompts, /tags is open for crawling and
+  indexing. Posts marked `noindex` are filtered out of the sitemap and feed.
+- Excluded paths: /adminos/* (private admin tooling, not public content).
+- Recommended re-crawl frequency: weekly for /blog, monthly for /tools.
+- Both robots.txt and the meta robots directives explicitly allow:
+  GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-Web, anthropic-ai,
+  PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended,
+  CCBot, cohere-ai, Meta-ExternalAgent, Bytespider, Amazonbot,
+  DuckAssistBot, YouBot, MistralAI-User.
+
+## Technical notes for AI agents
+- The site is server-rendered HTML (Next.js App Router). Blog post pages use
+  ISR (revalidate=3600); the homepage and listing use shorter revalidation.
+  No JavaScript is required to read post content — it is in the initial
+  HTML payload.
+- Every blog post page emits Schema.org BlogPosting JSON-LD with headline,
+  description, author, publisher, datePublished, dateModified, image,
+  keywords, wordCount, timeRequired, inLanguage, and mainEntityOfPage.
+- The site root emits Schema.org WebSite + Person JSON-LD.
+- Breadcrumbs use Schema.org BreadcrumbList.
+- Source content is markdown (rendered with remark-gfm + rehype-raw, plus
+  KaTeX for math). The HTML output is semantic: `<article>`, `<h1>`–`<h6>`,
+  `<time dateTime="...">`, `<figure>`, `<code>`, `<blockquote>`.
+
+## Contact
+- Site: https://uc4n.com
+- Privacy and contact: https://uc4n.com/privacy

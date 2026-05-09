@@ -16,7 +16,7 @@ import { RelatedPosts } from '@/components/related-posts'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { resolveCanonicalUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 type PageParams = Promise<{
   slug: string
@@ -124,7 +124,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // Generate structured data for blog post
 function generateBlogStructuredData(post: Post, wordCount: number, readingTime: number, canonicalUrl: string) {
-  return {
+  const data: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
@@ -132,6 +132,12 @@ function generateBlogStructuredData(post: Post, wordCount: number, readingTime: 
     author: {
       '@type': 'Person',
       name: 'Umutcan Edizaslan',
+      url: toAbsoluteSiteUrl('/'),
+    },
+    publisher: {
+      '@type': 'Person',
+      name: 'Umutcan Edizaslan',
+      url: toAbsoluteSiteUrl('/'),
     },
     datePublished: post.created_at,
     dateModified: post.updated_at || post.created_at,
@@ -139,9 +145,14 @@ function generateBlogStructuredData(post: Post, wordCount: number, readingTime: 
       '@type': 'WebPage',
       '@id': canonicalUrl,
     },
-    wordCount: wordCount,
+    wordCount,
     timeRequired: `PT${readingTime}M`,
+    inLanguage: post.language_code || 'en',
+    url: canonicalUrl,
   }
+  if (post.og_image_url) data.image = post.og_image_url
+  if (post.tags && post.tags.length > 0) data.keywords = post.tags.join(', ')
+  return data
 }
 
 export default async function Page({ params }: Props) {

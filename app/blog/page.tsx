@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { supabase, type Post } from '@/lib/supabase/config'
 import { resolveCanonicalUrl, toAbsoluteSiteUrl } from '@/lib/site'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'Blog',

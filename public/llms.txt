@@ -3,6 +3,8 @@
 
 Canonical: https://uc4n.com
 Sitemap: https://uc4n.com/sitemap.xml
+RSS: https://uc4n.com/feed.xml
+Full guide: https://uc4n.com/llms-full.txt
 
 Preferred content:
 - https://uc4n.com/blog
