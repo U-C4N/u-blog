@@ -190,7 +190,8 @@ export default function AsciiConverter() {
     brightness,
     edgeBoost,
     edgeThreshold,
-  }), [alphaThreshold, brightness, charAspect, contrast, edgeBoost, edgeThreshold, invert, maxSide])
+    dither,
+  }), [alphaThreshold, brightness, charAspect, contrast, dither, edgeBoost, edgeThreshold, invert, maxSide])
 
   const experimentalGrid = useMemo(() => {
     if (!dims) return null
@@ -477,7 +478,7 @@ export default function AsciiConverter() {
                 <Switch id="invert" checked={invert} onCheckedChange={setInvert} />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="dither">HQ Dither (Standard)</Label>
+                <Label htmlFor="dither">HQ Dither</Label>
                 <Switch id="dither" checked={dither} onCheckedChange={setDither} />
               </div>
               <p className="text-xs text-muted-foreground">

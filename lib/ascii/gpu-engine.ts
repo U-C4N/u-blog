@@ -37,6 +37,7 @@ export interface GpuAsciiOptions {
   brightness: number
   edgeBoost: number
   edgeThreshold: number
+  dither: boolean
 }
 
 export function computeGpuGridSize(
@@ -233,9 +234,9 @@ struct Params {
   horizLevels: u32,
   diagPosLevels: u32,
   diagNegLevels: u32,
+  dither: u32,
   pad0: u32,
   pad1: u32,
-  pad2: u32,
 }
 
 @group(0) @binding(0) var srcTex: texture_2d<f32>;
@@ -267,6 +268,36 @@ fn whiteCompositeLuma(x: i32, y: i32) -> f32 {
 
 fn applyToneAdjust(l: f32, contrast: f32, brightness: f32) -> f32 {
   return clamp(((l - 0.5) * contrast) + 0.5 + brightness, 0.0, 1.0);
+}
+
+// Bayer 4x4 ordered dither matrix, returned in [-7.5, 7.5] / 16 ≈ ±0.47.
+// Adding this to the rampPos*levels term and rounding shifts neighboring
+// pixels across level boundaries, breaking up the visible banding from
+// hard 15-level tone quantization.
+fn bayer4(ux: u32, uy: u32) -> f32 {
+  let dx = ux & 3u;
+  let dy = uy & 3u;
+  let idx = dy * 4u + dx;
+  var v: f32 = 0.0;
+  switch (idx) {
+    case 0u:  { v =  0.0; }
+    case 1u:  { v =  8.0; }
+    case 2u:  { v =  2.0; }
+    case 3u:  { v = 10.0; }
+    case 4u:  { v = 12.0; }
+    case 5u:  { v =  4.0; }
+    case 6u:  { v = 14.0; }
+    case 7u:  { v =  6.0; }
+    case 8u:  { v =  3.0; }
+    case 9u:  { v = 11.0; }
+    case 10u: { v =  1.0; }
+    case 11u: { v =  9.0; }
+    case 12u: { v = 15.0; }
+    case 13u: { v =  7.0; }
+    case 14u: { v = 13.0; }
+    default:  { v =  5.0; }
+  }
+  return (v - 7.5) / 16.0;
 }
 
 @compute @workgroup_size(16, 16, 1)
@@ -336,7 +367,12 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     rampPos = mix(density, edgeRamp, edgeOnset);
   }
 
-  let charIdx = u32(round(rampPos * f32(levelCount - 1u)));
+  let levelMaxF = f32(levelCount - 1u);
+  var levelF = rampPos * levelMaxF;
+  if (params.dither == 1u) {
+    levelF = levelF + bayer4(x, y);
+  }
+  let charIdx = u32(clamp(round(levelF), 0.0, levelMaxF));
   outBuf[outIndex] = (bankId << 24u) | (charIdx & 0xFFFFFFu);
 }
 `
@@ -501,6 +537,7 @@ export async function convertToAsciiGpu(
     u32[10] = BANK_LEVELS[2]
     u32[11] = BANK_LEVELS[3]
     u32[12] = BANK_LEVELS[4]
+    u32[13] = options.dither ? 1 : 0
     device.queue.writeBuffer(uniformBuffer, 0, uniformBytes)
 
     emit(34, 'Compiling shader')
