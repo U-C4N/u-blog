@@ -11,10 +11,9 @@ import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { AsciiWorkerClient, type AsciiWorkerJob } from '@/lib/ascii/worker-client'
 import type { AsciiConvertOptions } from '@/lib/ascii/types'
-import { convertToAsciiExperimentalCpu } from '@/lib/ascii/experimental-cpu'
-import { convertToAsciiWebGpu, hasUsableWebGpuAdapter, hasWebGpuSupport } from '@/lib/ascii/webgpu-experimental'
+import { convertToAsciiGpu, hasUsableWebGpuAdapter, hasWebGpuSupport, type GpuAsciiOptions } from '@/lib/ascii/gpu-engine'
 import { downloadTextFile } from '@/lib/file-utils'
-import { Check, Copy, Cpu, Download, Sparkles, UploadCloud, Zap } from 'lucide-react'
+import { Check, Copy, Cpu, Download, Gauge, Sparkles, UploadCloud, Zap } from 'lucide-react'
 
 const DEFAULT_CHARSET = '@%#*+=-:. '
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
@@ -36,7 +35,7 @@ const checkerStyle = {
   backgroundPosition: '0 0, 0 9px, 9px -9px, -9px 0',
 } as const
 
-type Engine = 'worker' | 'webgpu' | 'cpu'
+type Engine = 'worker' | 'gpu'
 type Output = { text: string; width: number; height: number; runtimeMs: number; engine: Engine } | null
 
 function log(event: string, details?: Record<string, unknown>) {
@@ -120,6 +119,8 @@ export default function AsciiConverter() {
   const [contrast, setContrast] = useState(1)
   const [brightness, setBrightness] = useState(0)
   const [edgeBoost, setEdgeBoost] = useState(1)
+  const [edgeThreshold, setEdgeThreshold] = useState(0.18)
+  const [maxSide, setMaxSide] = useState(1024)
   const [invert, setInvert] = useState(false)
   const [dither, setDither] = useState(true)
   const [charsetPreset, setCharsetPreset] = useState<CharsetPresetKey>('classic')
@@ -146,18 +147,15 @@ export default function AsciiConverter() {
   const experimentalCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const copyTimerRef = useRef<number | null>(null)
 
-  const runStandard = !experimental || compare
-  const runExperimental = experimental || compare
   const experimentalActive = experimental && webGpuReady
+  const runStandard = !experimental || compare
+  const runExperimental = (experimental || compare) && webGpuReady
 
   const targetWidth = useMemo(() => {
-    const highDetail = runExperimental
-    if (!dims) return highDetail ? 320 : 260
-    const base = dims.width / (highDetail ? 2.8 : 3.4)
-    const proposed = Math.round(base * detailScale)
-    const maxWidth = highDetail ? 1600 : 1200
-    return Math.max(24, Math.min(maxWidth, dims.width, Math.max(96, proposed)))
-  }, [detailScale, dims, runExperimental])
+    if (!dims) return 260
+    const proposed = Math.round((dims.width / 3.2) * detailScale)
+    return Math.max(24, Math.min(1200, dims.width, Math.max(96, proposed)))
+  }, [detailScale, dims])
 
   const options = useMemo<AsciiConvertOptions>(() => ({
     outputWidth: targetWidth,
@@ -171,6 +169,27 @@ export default function AsciiConverter() {
     brightness,
     edgeBoost,
   }), [alphaThreshold, brightness, charAspect, charsetPreset, contrast, dither, edgeBoost, invert, targetWidth])
+
+  const gpuOptions = useMemo<GpuAsciiOptions>(() => ({
+    maxSide,
+    invert,
+    alphaThreshold,
+    contrast,
+    brightness,
+    edgeBoost,
+    edgeThreshold,
+  }), [alphaThreshold, brightness, contrast, edgeBoost, edgeThreshold, invert, maxSide])
+
+  const experimentalGrid = useMemo(() => {
+    if (!dims) return null
+    const longest = Math.max(dims.width, dims.height)
+    if (longest <= maxSide) return { width: dims.width, height: dims.height }
+    const ratio = maxSide / longest
+    return {
+      width: Math.max(1, Math.round(dims.width * ratio)),
+      height: Math.max(1, Math.round(dims.height * ratio)),
+    }
+  }, [dims, maxSide])
 
   const current = experimental ? experimentalOut : standardOut
   const currentText = current?.text ?? ''
@@ -208,35 +227,23 @@ export default function AsciiConverter() {
     const onProgress = (percent: number, stage: string) => {
       if (activeRunRef.current !== rid) return
       setProgress(mapRange(percent, start, end))
-      setLabel(`Experimental: ${stage}`)
+      setLabel(`Experimental 1:1 GPU: ${stage}`)
     }
 
-    if (webGpuReady) {
-      try {
-        const result = await convertToAsciiWebGpu(source, options, {
-          onProgress: (p) => onProgress(p.percent, p.label),
-          shouldAbort: () => activeRunRef.current !== rid,
-        })
-        return { text: result.text, width: result.width, height: result.height, runtimeMs: result.elapsedMs, engine: 'webgpu' as const }
-      } catch (reason) {
-        const message = reason instanceof Error ? reason.message : 'WebGPU failed'
-        if (cancelledError(message)) throw reason
-        log('experimental_webgpu_fallback_cpu', { runId: rid, message })
-        setWebGpuReady(false)
-        setWebGpuChecked(true)
-      }
-    }
-
-    const cpu = await convertToAsciiExperimentalCpu(source, options, {
+    const result = await convertToAsciiGpu(source, gpuOptions, {
       onProgress: (p) => onProgress(p.percent, p.label),
       shouldAbort: () => activeRunRef.current !== rid,
     })
-    return { text: cpu.text, width: cpu.width, height: cpu.height, runtimeMs: cpu.elapsedMs, engine: 'cpu' as const }
-  }, [options, webGpuReady])
+    return { text: result.text, width: result.width, height: result.height, runtimeMs: result.elapsedMs, engine: 'gpu' as const }
+  }, [gpuOptions])
 
   const run = useCallback((source: File) => {
     if (runStandard && !hasWorker) {
       setError('Browser does not support Web Workers required for standard pass.')
+      return
+    }
+    if (experimental && !compare && !webGpuReady) {
+      setError('Experimental 1:1 mode needs WebGPU. Enable WebGPU in your browser, or turn on A/B Compare to also see Standard output.')
       return
     }
 
@@ -285,7 +292,7 @@ export default function AsciiConverter() {
         jobRef.current = null
       }
     })()
-  }, [cancelJob, compare, experimental, experimentalActive, experimentalPass, hasWorker, options.outputWidth, runExperimental, runStandard, workerPass])
+  }, [cancelJob, compare, experimental, experimentalActive, experimentalPass, hasWorker, options.outputWidth, runExperimental, runStandard, webGpuReady, workerPass])
 
   const onFile = useCallback((next: File) => {
     const mimeOk = next.type === 'image/png' || next.type === 'image/jpeg' || next.type === 'image/jpg'
@@ -410,7 +417,7 @@ export default function AsciiConverter() {
             <div>
               <CardTitle className="flex items-center gap-2 text-xl"><Sparkles className="h-5 w-5" />PNG/JPG to ASCII</CardTitle>
               <CardDescription className="mt-2 max-w-[66ch]">
-                4K locked, exact canvas output. Experimental mode uses WebGPU when available, otherwise custom CPU fallback. A/B panel compares both.
+                Standard mode: dithered 4K worker. Experimental mode: pure WebGPU 1:1 — every source pixel becomes one ASCII character via a single compute pass, no CPU per-pixel work. A/B compares the two side by side.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -418,11 +425,11 @@ export default function AsciiConverter() {
                 {hasWorkerAcceleration ? <Zap className="h-3 w-3" /> : <Cpu className="h-3 w-3" />}
                 {hasWorkerAcceleration ? 'Worker Acceleration' : 'Worker Mode'}
               </Badge>
-              <Badge variant="outline">4K Locked</Badge>
+              <Badge variant="outline">1 px = 1 char</Badge>
               <Badge variant="outline">Exact Canvas Fit</Badge>
               {compare && <Badge variant="outline">A/B Compare</Badge>}
-              {experimentalActive && <Badge variant="default">Experimental WebGPU</Badge>}
-              {experimental && !experimentalActive && <Badge variant="secondary">Experimental CPU Fallback</Badge>}
+              {experimentalActive && <Badge variant="default" className="gap-1"><Gauge className="h-3 w-3" />Experimental 1:1 GPU</Badge>}
+              {experimental && !webGpuReady && webGpuChecked && <Badge variant="destructive">No WebGPU</Badge>}
             </div>
           </div>
         </CardHeader>
@@ -452,8 +459,8 @@ export default function AsciiConverter() {
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/15 p-4 lg:grid-cols-3">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="exp">Experimental Mode</Label>
-                <Switch id="exp" checked={experimental} onCheckedChange={(v) => { setExperimental(v); log('toggle_experimental', { value: v }) }} />
+                <Label htmlFor="exp" className={cn(!webGpuReady && webGpuChecked && 'text-muted-foreground/60')}>Experimental 1:1 GPU</Label>
+                <Switch id="exp" disabled={!webGpuReady && webGpuChecked} checked={experimental && webGpuReady} onCheckedChange={(v) => { setExperimental(v); log('toggle_experimental', { value: v }) }} />
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="cmp">A/B Compare</Label>
@@ -468,7 +475,7 @@ export default function AsciiConverter() {
                 <Switch id="dither" checked={dither} onCheckedChange={setDither} />
               </div>
               <p className="text-xs text-muted-foreground">
-                {!webGpuChecked ? 'Checking WebGPU adapter...' : webGpuReady ? 'WebGPU adapter ready.' : 'No WebGPU adapter; CPU experimental fallback active.'}
+                {!webGpuChecked ? 'Probing GPU adapter...' : webGpuReady ? 'High-performance GPU adapter ready. Single compute pass, single readback, zero CPU per-pixel loops.' : 'No WebGPU adapter on this device. Standard worker mode still works.'}
               </p>
             </div>
 
@@ -516,9 +523,23 @@ export default function AsciiConverter() {
                   <span className="text-muted-foreground">Edge Boost (Experimental)</span>
                   <Badge variant="outline">{edgeBoost.toFixed(2)}x</Badge>
                 </div>
-                <Slider min={0.6} max={1.9} step={0.02} value={[edgeBoost]} onValueChange={(v) => setEdgeBoost(v[0] ?? 1)} />
+                <Slider min={0.6} max={3.0} step={0.05} value={[edgeBoost]} onValueChange={(v) => setEdgeBoost(v[0] ?? 1)} />
               </div>
-              <p className="text-xs font-medium">Charset Preset</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Edge Threshold (Experimental)</span>
+                  <Badge variant="outline">{edgeThreshold.toFixed(2)}</Badge>
+                </div>
+                <Slider min={0.05} max={0.6} step={0.01} value={[edgeThreshold]} onValueChange={(v) => setEdgeThreshold(v[0] ?? 0.18)} />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">1:1 Max Side (Experimental)</span>
+                  <Badge variant="outline">{maxSide}px</Badge>
+                </div>
+                <Slider min={256} max={2048} step={64} value={[maxSide]} onValueChange={(v) => setMaxSide(v[0] ?? 1024)} />
+              </div>
+              <p className="text-xs font-medium">Charset Preset (Standard)</p>
               <div className="grid grid-cols-1 gap-2">
                 {(Object.keys(CHARSET_PRESETS) as CharsetPresetKey[]).map((key) => (
                   <button
@@ -538,9 +559,9 @@ export default function AsciiConverter() {
                 ))}
               </div>
               <div className="space-y-2 text-xs text-muted-foreground">
-                <p>Output grid width: {targetWidth} chars</p>
-                <p>Input sampling ceiling: {MAX_INPUT_DIMENSION}px</p>
-                <p>Primary: {experimental ? (experimentalActive ? 'Experimental WebGPU' : 'Experimental CPU') : 'Standard 4K Worker'}</p>
+                <p>Standard grid width: {targetWidth} chars</p>
+                {experimentalGrid && <p>Experimental 1:1 grid: {experimentalGrid.width}×{experimentalGrid.height} ({(experimentalGrid.width * experimentalGrid.height).toLocaleString()} glyphs)</p>}
+                <p>Primary: {experimentalActive ? 'Experimental 1:1 GPU' : 'Standard 4K Worker'}</p>
               </div>
             </div>
           </div>

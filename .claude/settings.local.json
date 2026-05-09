@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(wc:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm install:*)"
-    ]
-  }
-}

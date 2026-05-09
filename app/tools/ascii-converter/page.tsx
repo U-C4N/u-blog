@@ -4,12 +4,12 @@ import AsciiConverter from '@/components/ascii-converter'
 import { env } from '@/env.mjs'
 
 const title = 'ASCII Converter'
-const description = 'Convert PNG and JPG images to 4K-detail ASCII text in your browser with exact-size canvas output, transparent PNG alpha preservation, and an experimental WebGPU mode.'
+const description = 'Convert PNG and JPG images to ASCII text in your browser. Standard mode outputs dithered 4K text; the experimental 1:1 mode runs a single WebGPU compute pass that turns every source pixel into one ASCII character — no CPU per-pixel loops.'
 
 export const metadata: Metadata = {
   title: `${title} | Tools | U-BLOG`,
   description,
-  keywords: ['ascii converter', '4k ascii converter', 'webgpu ascii', 'png to ascii', 'transparent png ascii', 'jpg to ascii', 'image to text art', 'ascii art generator', 'online ascii tool'],
+  keywords: ['ascii converter', '1:1 ascii', 'webgpu ascii', 'gpu ascii generator', 'png to ascii', 'transparent png ascii', 'jpg to ascii', 'image to text art', 'ascii art generator', 'fast ascii converter'],
   openGraph: {
     type: 'website',
     title: `${title} | Tools | U-BLOG`,
@@ -30,7 +30,7 @@ export default function AsciiConverterPage() {
   return (
     <ToolPageLayout
       title={title}
-      description="Upload PNG/JPG and get instant 4K ASCII output with exact-size canvas rendering, transparent pixel-safe conversion, and experimental WebGPU synthesis."
+      description="Upload PNG/JPG. Standard mode produces dithered 4K ASCII via a Web Worker. Experimental 1:1 mode runs a single WebGPU compute pass — every pixel becomes one character, with edge-orientation glyph banks chosen on the GPU."
       jsonLd={{
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
