@@ -1,19 +1,20 @@
 import type { AsciiConvertResult } from './types'
 
-// Experimental 1:1 WebGPU ASCII engine.
-// Each source pixel becomes exactly one character. A single compute pass
-// computes luminance, Sobel gradient, and selects a glyph from one of five
-// orientation-specific banks — entirely on the GPU. The CPU only runs:
-//   1. Image decode + texture upload
-//   2. One mapAsync readback
-//   3. UTF-16 materialization via TextDecoder
+// Aspect-correct WebGPU ASCII engine.
+// Each cell of the resampled image becomes exactly one character. A single
+// compute pass computes luminance, Sobel gradient, and selects a glyph from
+// one of five orientation-specific banks — entirely on the GPU. CPU only runs:
+//   1. Image decode + Y-axis resample to compensate for monospace 2:1 chars
+//   2. Texture upload
+//   3. One mapAsync readback
+//   4. UTF-16 materialization via TextDecoder
 // No per-pixel JS loops for math, no string concatenation hot path.
 
 const TONE_BANK = ' .,:;!|i*+xX#$@'
 const VERT_BANK = " .'!|I#"
 const HORIZ_BANK = ' ._-=~+#'
-const DIAG_POS_BANK = ' ./xX#'
-const DIAG_NEG_BANK = ' .\\xX#'
+const DIAG_POS_BANK = ' .,/cxX#'
+const DIAG_NEG_BANK = ' .,\\zxX#'
 
 const BANKS: readonly string[] = [TONE_BANK, VERT_BANK, HORIZ_BANK, DIAG_POS_BANK, DIAG_NEG_BANK]
 const BANK_LEVELS = BANKS.map((b) => b.length)
@@ -29,12 +30,28 @@ const NEWLINE_CODE = 0x0a
 
 export interface GpuAsciiOptions {
   maxSide: number
+  charAspect: number
   invert: boolean
   alphaThreshold: number
   contrast: number
   brightness: number
   edgeBoost: number
   edgeThreshold: number
+}
+
+export function computeGpuGridSize(
+  imageWidth: number,
+  imageHeight: number,
+  maxSide: number,
+  charAspect: number,
+): { width: number; height: number } {
+  const safeMaxSide = clampN(maxSide, 64, 8192, 1024)
+  const safeAspect = clampN(charAspect, 0.2, 1, 0.5)
+  const longest = Math.max(imageWidth, imageHeight, 1)
+  const ratio = longest <= safeMaxSide ? 1 : safeMaxSide / longest
+  const w = Math.max(1, Math.round(imageWidth * ratio))
+  const h = Math.max(1, Math.round(imageHeight * ratio * safeAspect))
+  return { width: w, height: h }
 }
 
 export interface GpuAsciiCallbacks {
@@ -48,6 +65,11 @@ interface GpuMinimal {
 
 interface GpuAdapterMinimal {
   requestDevice(desc?: object): Promise<GpuDeviceMinimal>
+  limits?: {
+    maxBufferSize?: number
+    maxStorageBufferBindingSize?: number
+    maxTextureDimension2D?: number
+  }
 }
 
 interface GpuQueueMinimal {
@@ -162,8 +184,18 @@ async function getDevice(): Promise<GpuDeviceMinimal | null> {
   if (devicePromise) return devicePromise
   const adapter = await getAdapter()
   if (!adapter) return null
+  // 8K ASCII grids can produce >128 MB output buffers; ask the adapter for its
+  // max limits so we don't fall back to the conservative WebGPU defaults.
+  const requiredLimits: Record<string, number> = {}
+  const limits = adapter.limits
+  if (limits?.maxStorageBufferBindingSize) {
+    requiredLimits.maxStorageBufferBindingSize = limits.maxStorageBufferBindingSize
+  }
+  if (limits?.maxBufferSize) {
+    requiredLimits.maxBufferSize = limits.maxBufferSize
+  }
   devicePromise = adapter
-    .requestDevice()
+    .requestDevice(Object.keys(requiredLimits).length > 0 ? { requiredLimits } : undefined)
     .then((device) => {
       cachedDevice = device
       cachedShader = null
@@ -269,19 +301,26 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   let gx = (-p00 + p02) + (-2.0 * p10 + 2.0 * p12) + (-p20 + p22);
   let gy = (-p00 - 2.0 * p01 - p02) + (p20 + 2.0 * p21 + p22);
-  let edgeMag = clamp(length(vec2<f32>(gx, gy)) * params.edgeBoost, 0.0, 1.0);
+  // Sobel magnitude is in [0, 4*sqrt(2)]; normalize then apply user boost.
+  let rawEdge = length(vec2<f32>(gx, gy)) * 0.1768;
+  let edgeMag = clamp(rawEdge * params.edgeBoost, 0.0, 1.0);
 
   var bankId: u32 = 0u;
   var levelCount: u32 = params.toneLevels;
   var rampPos: f32 = density;
 
-  if (edgeMag > params.edgeThreshold) {
+  // Soft onset window: tone-bank below threshold, edge-bank only when the
+  // signal is clearly above. This kills the hard "halo" of orientation
+  // chars that used to ring every silhouette.
+  let edgeBand = max(params.edgeThreshold * 0.35, 0.04);
+  let edgeOnset = smoothstep(params.edgeThreshold, params.edgeThreshold + edgeBand, edgeMag);
+  if (edgeOnset > 0.5) {
     let absX = abs(gx);
     let absY = abs(gy);
-    if (absX > absY * 1.35) {
+    if (absX > absY * 1.6) {
       bankId = 1u;
       levelCount = params.vertLevels;
-    } else if (absY > absX * 1.35) {
+    } else if (absY > absX * 1.6) {
       bankId = 2u;
       levelCount = params.horizLevels;
     } else if (gx * gy >= 0.0) {
@@ -291,7 +330,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       bankId = 4u;
       levelCount = params.diagNegLevels;
     }
-    rampPos = clamp(0.25 + edgeMag * 0.85, 0.0, 1.0);
+    // Anchor the ramp on tone density so dark edges still pick dense glyphs;
+    // edge magnitude only nudges toward the dense end of the orientation bank.
+    let edgeRamp = clamp(density * 0.6 + edgeMag * 0.5, 0.05, 1.0);
+    rampPos = mix(density, edgeRamp, edgeOnset);
   }
 
   let charIdx = u32(round(rampPos * f32(levelCount - 1u)));
@@ -299,24 +341,29 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 }
 `
 
-async function prepareSourceBitmap(file: File, maxSide: number): Promise<{ bitmap: ImageBitmap; width: number; height: number }> {
+async function prepareSourceBitmap(
+  file: File,
+  maxSide: number,
+  charAspect: number,
+): Promise<{ bitmap: ImageBitmap; width: number; height: number }> {
   const decoded = await createImageBitmap(file, { premultiplyAlpha: 'none' as const })
-  const longest = Math.max(decoded.width, decoded.height)
-  if (longest <= maxSide) {
-    return { bitmap: decoded, width: decoded.width, height: decoded.height }
+  const target = computeGpuGridSize(decoded.width, decoded.height, maxSide, charAspect)
+  if (target.width === decoded.width && target.height === decoded.height) {
+    return { bitmap: decoded, width: target.width, height: target.height }
   }
   try {
-    const ratio = maxSide / longest
-    const w = Math.max(1, Math.round(decoded.width * ratio))
-    const h = Math.max(1, Math.round(decoded.height * ratio))
-    const canvas = new OffscreenCanvas(w, h)
+    const canvas = new OffscreenCanvas(target.width, target.height)
     const ctx = canvas.getContext('2d', { alpha: true })
-    if (!ctx) throw new Error('Could not initialize 2D context for downsampling.')
+    if (!ctx) throw new Error('Could not initialize 2D context for resampling.')
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(decoded, 0, 0, w, h)
-    const downsampled = await createImageBitmap(canvas)
-    return { bitmap: downsampled, width: w, height: h }
+    ctx.drawImage(decoded, 0, 0, target.width, target.height)
+    // premultiplyAlpha:'none' is required: the shader composites RGB on white
+    // using the original alpha (luma*alpha + (1-alpha)). If we let the browser
+    // premultiply during createImageBitmap(canvas), semi-transparent edges
+    // get darkened twice and produce a black halo in the output.
+    const resampled = await createImageBitmap(canvas, { premultiplyAlpha: 'none' as const })
+    return { bitmap: resampled, width: target.width, height: target.height }
   } finally {
     decoded.close()
   }
@@ -400,8 +447,9 @@ export async function convertToAsciiGpu(
   checkAbort()
 
   emit(8, 'Decoding source image')
-  const safeMaxSide = clampN(options.maxSide, 64, 4096, 1024)
-  const { bitmap, width, height } = await prepareSourceBitmap(file, safeMaxSide)
+  const safeMaxSide = clampN(options.maxSide, 64, 8192, 1024)
+  const safeCharAspect = clampN(options.charAspect, 0.2, 1, 0.5)
+  const { bitmap, width, height } = await prepareSourceBitmap(file, safeMaxSide, safeCharAspect)
   checkAbort()
 
   let texture: GpuTextureMinimal | null = null
@@ -413,10 +461,12 @@ export async function convertToAsciiGpu(
     debug('begin', { width, height, file: file.name })
 
     emit(20, 'Uploading texture to GPU')
+    // RENDER_ATTACHMENT is required by copyExternalImageToTexture per the
+    // WebGPU spec; Dawn injects a validation error if it's missing.
     texture = device.createTexture({
       size: { width, height, depthOrArrayLayers: 1 },
       format: 'rgba8unorm',
-      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
     }) as GpuTextureMinimal
     device.queue.copyExternalImageToTexture({ source: bitmap }, { texture }, { width, height })
     checkAbort()

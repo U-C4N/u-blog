@@ -4,7 +4,7 @@ import AsciiConverter from '@/components/ascii-converter'
 import { env } from '@/env.mjs'
 
 const title = 'ASCII Converter'
-const description = 'Convert PNG and JPG images to ASCII text in your browser. Standard mode outputs dithered 4K text; the experimental 1:1 mode runs a single WebGPU compute pass that turns every source pixel into one ASCII character — no CPU per-pixel loops.'
+const description = 'Convert PNG and JPG images to ASCII text in your browser. Standard mode outputs dithered 4K text; the experimental GPU mode runs a single WebGPU compute pass on a monospace-aspect-corrected grid, picking each glyph from tone and Sobel-orientation banks — no CPU per-pixel loops.'
 
 export const metadata: Metadata = {
   title: `${title} | Tools | U-BLOG`,
@@ -30,7 +30,7 @@ export default function AsciiConverterPage() {
   return (
     <ToolPageLayout
       title={title}
-      description="Upload PNG/JPG. Standard mode produces dithered 4K ASCII via a Web Worker. Experimental 1:1 mode runs a single WebGPU compute pass — every pixel becomes one character, with edge-orientation glyph banks chosen on the GPU."
+      description="Upload PNG/JPG. Standard mode produces dithered 4K ASCII via a Web Worker. Experimental GPU mode resamples the image to a monospace-aspect-correct grid, then runs a single WebGPU compute pass — each cell picks a glyph from tone and Sobel-orientation banks on the GPU."
       jsonLd={{
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',

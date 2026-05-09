@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { AsciiWorkerClient, type AsciiWorkerJob } from '@/lib/ascii/worker-client'
 import type { AsciiConvertOptions } from '@/lib/ascii/types'
-import { convertToAsciiGpu, hasUsableWebGpuAdapter, hasWebGpuSupport, type GpuAsciiOptions } from '@/lib/ascii/gpu-engine'
+import { computeGpuGridSize, convertToAsciiGpu, hasUsableWebGpuAdapter, hasWebGpuSupport, type GpuAsciiOptions } from '@/lib/ascii/gpu-engine'
 import { downloadTextFile } from '@/lib/file-utils'
 import { Check, Copy, Cpu, Download, Gauge, Sparkles, UploadCloud, Zap } from 'lucide-react'
 
@@ -79,30 +79,41 @@ async function imageDimensions(file: File): Promise<{ width: number; height: num
   }
 }
 
-function drawAscii(canvas: HTMLCanvasElement, text: string, grid: { width: number; height: number }, source: { width: number; height: number }) {
+// Browser canvas backing stores fail silently above ~16k px and burn enormous
+// amounts of memory before that, so we cap the preview here. The downloaded
+// TXT is independent of canvas — it always carries the full grid.
+const MAX_CANVAS_DIM = 4096
+
+function drawAscii(canvas: HTMLCanvasElement, text: string, grid: { width: number; height: number }) {
   const ctx = canvas.getContext('2d', { alpha: true })
   if (!ctx) return
 
-  canvas.width = source.width
-  canvas.height = source.height
-  ctx.clearRect(0, 0, source.width, source.height)
-
-  const lines = text.split('\n')
-  const cellW = source.width / grid.width
-  const cellH = source.height / grid.height
   const fontSize = 14
   const font = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+  ctx.font = `${fontSize}px ${font}`
+  const cellW = ctx.measureText('M').width || 8
+  const lineH = fontSize
+
+  const naturalW = Math.max(1, Math.round(grid.width * cellW))
+  const naturalH = Math.max(1, Math.round(grid.height * lineH))
+  const fit = Math.min(1, MAX_CANVAS_DIM / Math.max(naturalW, naturalH))
+  const targetW = Math.max(1, Math.round(naturalW * fit))
+  const targetH = Math.max(1, Math.round(naturalH * fit))
+  if (canvas.width !== targetW) canvas.width = targetW
+  if (canvas.height !== targetH) canvas.height = targetH
+  ctx.clearRect(0, 0, targetW, targetH)
 
   ctx.save()
+  if (fit < 1) ctx.scale(fit, fit)
   ctx.fillStyle = '#0f172a'
   ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
   ctx.font = `${fontSize}px ${font}`
-  const m = ctx.measureText('M').width || 8
-  ctx.scale(cellW / m, cellH / fontSize)
-  for (let y = 0; y < lines.length; y += 1) {
-    if (lines[y].trim().length === 0) continue
-    ctx.fillText(lines[y], 0, (y + 1) * fontSize)
+  const lines = text.split('\n')
+  const limit = Math.min(grid.height, lines.length)
+  for (let y = 0; y < limit; y += 1) {
+    if (lines[y].length === 0) continue
+    ctx.fillText(lines[y], 0, (y + 1) * lineH)
   }
   ctx.restore()
 }
@@ -172,24 +183,19 @@ export default function AsciiConverter() {
 
   const gpuOptions = useMemo<GpuAsciiOptions>(() => ({
     maxSide,
+    charAspect,
     invert,
     alphaThreshold,
     contrast,
     brightness,
     edgeBoost,
     edgeThreshold,
-  }), [alphaThreshold, brightness, contrast, edgeBoost, edgeThreshold, invert, maxSide])
+  }), [alphaThreshold, brightness, charAspect, contrast, edgeBoost, edgeThreshold, invert, maxSide])
 
   const experimentalGrid = useMemo(() => {
     if (!dims) return null
-    const longest = Math.max(dims.width, dims.height)
-    if (longest <= maxSide) return { width: dims.width, height: dims.height }
-    const ratio = maxSide / longest
-    return {
-      width: Math.max(1, Math.round(dims.width * ratio)),
-      height: Math.max(1, Math.round(dims.height * ratio)),
-    }
-  }, [dims, maxSide])
+    return computeGpuGridSize(dims.width, dims.height, maxSide, charAspect)
+  }, [charAspect, dims, maxSide])
 
   const current = experimental ? experimentalOut : standardOut
   const currentText = current?.text ?? ''
@@ -227,7 +233,7 @@ export default function AsciiConverter() {
     const onProgress = (percent: number, stage: string) => {
       if (activeRunRef.current !== rid) return
       setProgress(mapRange(percent, start, end))
-      setLabel(`Experimental 1:1 GPU: ${stage}`)
+      setLabel(`Experimental GPU: ${stage}`)
     }
 
     const result = await convertToAsciiGpu(source, gpuOptions, {
@@ -243,7 +249,7 @@ export default function AsciiConverter() {
       return
     }
     if (experimental && !compare && !webGpuReady) {
-      setError('Experimental 1:1 mode needs WebGPU. Enable WebGPU in your browser, or turn on A/B Compare to also see Standard output.')
+      setError('Experimental GPU mode needs WebGPU. Enable WebGPU in your browser, or turn on A/B Compare to also see Standard output.')
       return
     }
 
@@ -382,19 +388,19 @@ export default function AsciiConverter() {
   }, [compare, dims, experimental, file, run])
 
   useEffect(() => {
-    if (!primaryCanvasRef.current || !current || !dims) return
-    drawAscii(primaryCanvasRef.current, current.text, { width: current.width, height: current.height }, dims)
-  }, [current, dims])
+    if (!primaryCanvasRef.current || !current) return
+    drawAscii(primaryCanvasRef.current, current.text, { width: current.width, height: current.height })
+  }, [current])
 
   useEffect(() => {
-    if (!compare || !dims) return
+    if (!compare) return
     if (standardCanvasRef.current && standardOut) {
-      drawAscii(standardCanvasRef.current, standardOut.text, { width: standardOut.width, height: standardOut.height }, dims)
+      drawAscii(standardCanvasRef.current, standardOut.text, { width: standardOut.width, height: standardOut.height })
     }
     if (experimentalCanvasRef.current && experimentalOut) {
-      drawAscii(experimentalCanvasRef.current, experimentalOut.text, { width: experimentalOut.width, height: experimentalOut.height }, dims)
+      drawAscii(experimentalCanvasRef.current, experimentalOut.text, { width: experimentalOut.width, height: experimentalOut.height })
     }
-  }, [compare, dims, experimentalOut, standardOut])
+  }, [compare, experimentalOut, standardOut])
 
   useEffect(() => () => {
     cancelJob()
@@ -417,7 +423,7 @@ export default function AsciiConverter() {
             <div>
               <CardTitle className="flex items-center gap-2 text-xl"><Sparkles className="h-5 w-5" />PNG/JPG to ASCII</CardTitle>
               <CardDescription className="mt-2 max-w-[66ch]">
-                Standard mode: dithered 4K worker. Experimental mode: pure WebGPU 1:1 — every source pixel becomes one ASCII character via a single compute pass, no CPU per-pixel work. A/B compares the two side by side.
+                Standard mode: dithered 4K worker. Experimental mode: aspect-correct WebGPU compute — image is resampled to a monospace-friendly grid, then a single compute pass picks each glyph from tone + Sobel-orientation banks. A/B compares the two side by side.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -425,10 +431,10 @@ export default function AsciiConverter() {
                 {hasWorkerAcceleration ? <Zap className="h-3 w-3" /> : <Cpu className="h-3 w-3" />}
                 {hasWorkerAcceleration ? 'Worker Acceleration' : 'Worker Mode'}
               </Badge>
-              <Badge variant="outline">1 px = 1 char</Badge>
-              <Badge variant="outline">Exact Canvas Fit</Badge>
+              <Badge variant="outline">Aspect-Correct Grid</Badge>
+              <Badge variant="outline">Single Compute Pass</Badge>
               {compare && <Badge variant="outline">A/B Compare</Badge>}
-              {experimentalActive && <Badge variant="default" className="gap-1"><Gauge className="h-3 w-3" />Experimental 1:1 GPU</Badge>}
+              {experimentalActive && <Badge variant="default" className="gap-1"><Gauge className="h-3 w-3" />Experimental GPU</Badge>}
               {experimental && !webGpuReady && webGpuChecked && <Badge variant="destructive">No WebGPU</Badge>}
             </div>
           </div>
@@ -459,7 +465,7 @@ export default function AsciiConverter() {
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/15 p-4 lg:grid-cols-3">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="exp" className={cn(!webGpuReady && webGpuChecked && 'text-muted-foreground/60')}>Experimental 1:1 GPU</Label>
+                <Label htmlFor="exp" className={cn(!webGpuReady && webGpuChecked && 'text-muted-foreground/60')}>Experimental GPU</Label>
                 <Switch id="exp" disabled={!webGpuReady && webGpuChecked} checked={experimental && webGpuReady} onCheckedChange={(v) => { setExperimental(v); log('toggle_experimental', { value: v }) }} />
               </div>
               <div className="flex items-center justify-between">
@@ -475,7 +481,7 @@ export default function AsciiConverter() {
                 <Switch id="dither" checked={dither} onCheckedChange={setDither} />
               </div>
               <p className="text-xs text-muted-foreground">
-                {!webGpuChecked ? 'Probing GPU adapter...' : webGpuReady ? 'High-performance GPU adapter ready. Single compute pass, single readback, zero CPU per-pixel loops.' : 'No WebGPU adapter on this device. Standard worker mode still works.'}
+                {!webGpuChecked ? 'Probing GPU adapter...' : webGpuReady ? 'High-performance GPU adapter ready. Image is pre-scaled to a monospace-friendly grid; one compute pass, one readback.' : 'No WebGPU adapter on this device. Standard worker mode still works.'}
               </p>
             </div>
 
@@ -534,10 +540,11 @@ export default function AsciiConverter() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">1:1 Max Side (Experimental)</span>
-                  <Badge variant="outline">{maxSide}px</Badge>
+                  <span className="text-muted-foreground">Max Side (Experimental)</span>
+                  <Badge variant="outline">{maxSide}px {maxSide >= 7680 ? '· 8K' : maxSide >= 3840 ? '· 4K' : ''}</Badge>
                 </div>
-                <Slider min={256} max={2048} step={64} value={[maxSide]} onValueChange={(v) => setMaxSide(v[0] ?? 1024)} />
+                <Slider min={256} max={8192} step={128} value={[maxSide]} onValueChange={(v) => setMaxSide(v[0] ?? 1024)} />
+                {maxSide > 4096 && <p className="text-[11px] text-muted-foreground">Above 4K the preview canvas is downscaled to stay within browser limits — the downloaded TXT keeps full {maxSide}px resolution.</p>}
               </div>
               <p className="text-xs font-medium">Charset Preset (Standard)</p>
               <div className="grid grid-cols-1 gap-2">
@@ -560,8 +567,8 @@ export default function AsciiConverter() {
               </div>
               <div className="space-y-2 text-xs text-muted-foreground">
                 <p>Standard grid width: {targetWidth} chars</p>
-                {experimentalGrid && <p>Experimental 1:1 grid: {experimentalGrid.width}×{experimentalGrid.height} ({(experimentalGrid.width * experimentalGrid.height).toLocaleString()} glyphs)</p>}
-                <p>Primary: {experimentalActive ? 'Experimental 1:1 GPU' : 'Standard 4K Worker'}</p>
+                {experimentalGrid && <p>Experimental grid: {experimentalGrid.width}×{experimentalGrid.height} ({(experimentalGrid.width * experimentalGrid.height).toLocaleString()} glyphs)</p>}
+                <p>Primary: {experimentalActive ? 'Experimental GPU' : 'Standard 4K Worker'}</p>
               </div>
             </div>
           </div>
@@ -621,7 +628,7 @@ export default function AsciiConverter() {
           </CardHeader>
           <CardContent>
             <div className="flex h-[30rem] items-center justify-center overflow-hidden rounded-lg border border-border/60 p-3" style={checkerStyle}>
-              {current && dims ? <canvas ref={primaryCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Primary ASCII canvas will appear here</div>}
+              {current ? <canvas ref={primaryCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Primary ASCII canvas will appear here</div>}
             </div>
           </CardContent>
         </Card>
@@ -651,7 +658,7 @@ export default function AsciiConverter() {
             </CardHeader>
             <CardContent>
               <div className="flex h-[26rem] items-center justify-center overflow-hidden rounded-lg border border-border/60 p-3" style={checkerStyle}>
-                {standardOut && dims ? <canvas ref={standardCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Standard output pending...</div>}
+                {standardOut ? <canvas ref={standardCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Standard output pending...</div>}
               </div>
             </CardContent>
           </Card>
@@ -679,7 +686,7 @@ export default function AsciiConverter() {
             </CardHeader>
             <CardContent>
               <div className="flex h-[26rem] items-center justify-center overflow-hidden rounded-lg border border-border/60 p-3" style={checkerStyle}>
-                {experimentalOut && dims ? <canvas ref={experimentalCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Experimental output pending...</div>}
+                {experimentalOut ? <canvas ref={experimentalCanvasRef} className="max-h-full max-w-full h-auto w-auto select-none" /> : <div className="text-sm text-slate-700/80">Experimental output pending...</div>}
               </div>
             </CardContent>
           </Card>
