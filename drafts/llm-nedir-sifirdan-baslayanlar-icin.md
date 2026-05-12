@@ -8,13 +8,13 @@ meta_title: LLM Nedir? Sıfırdan Başlayanlar İçin Türkçe Sözlük (2026)
 meta_description: LLM, token, parametre, embedding, context window, prompt, RAG ve hangi model ne — yapay zekaya sıfırdan başlayanlar için kapsamlı 2026 Türkçe rehber.
 -->
 
-Geçen hafta bir akrabamla telefondaydım. "Bu ChatGPT denen şey ne ya, herkes konuşuyor da" dedi. Ben anlatmaya başladım — token şu, parametre bu, transformer mimarisi falan — yarım dakika sonra "kestim seni, bir Türkçe konuş" dedi. Haklıydı. 2026'da herkes "AI" diyor ama dürüst olalım, çoğu insan kelimelerin altındaki şeyin ne olduğunu bilmiyor. Bu yazı, o akrabama anlatmaya çalıştığım her şeyin temiz hali. Hiçbir önceki bilgi şart değil; sıfırdan başlıyoruz.
+Akrabamla telefondaydım, "ChatGPT denen şey ne ya, oğul, sen bunu biliyorsundur" dedi. Anlatmaya başladım — token şuydu, parametre buydu, transformer şöyle çalışıyordu — yarım dakika sonra hattaki ses "dur, kestim seni, bir Türkçe konuş" dedi. Telefonu kapattıktan sonra on dakika boyunca aynaya baktım: ben miydim jargon kalkanının arkasına saklanan, yoksa konu mu gerçekten bu kadar kötü anlatılıyordu? İkisi de. 2026'da "AI" kelimesinin altındaki şey, açıklamaya çalışmadığında basit, açıklamaya çalıştığında saçma görünüyor.
 
-Bir sözlük + el rehberi düşün. Sıkıştığın yerde başlığa bakıp atlayabilirsin. Bitirdiğinde bir LLM tartışmasına denk geldiğinde "hadi bakalım" diyecek kadar zemine sahip olacaksın.
+Bu yazı, o on dakikalık aynaya bakışın ürünü — akrabama anlatmaya çalıştığım her şeyin, hiçbir önceki bilgi gerektirmeden, sıfırdan baştan yazılmış hali. Sonunda ne olacak: bir LLM tartışmasında "hadi bakalım" diyebileceksin. Daha iyisi: hangi cümlenin satılık olduğunu, hangisinin gerçekten mimariyle ilgili olduğunu ayırt edebileceksin.
 
 ## LLM Aslında Ne Demek?
 
-LLM = **Large Language Model**, Türkçesi **Büyük Dil Modeli**. Üç kelimeyi tek tek açayım:
+LLM dediğimiz şey aslında üç kelimelik bir reklam: **Large Language Model**, Türkçesi **Büyük Dil Modeli**. Sıralayalım, çünkü her kelimesi yalan olmasa da kafa karıştırıyor:
 
 - **Dil**: insan dili. Türkçe, İngilizce, kod, emoji — ne yazıyorsan.
 - **Model**: matematiksel bir tahmin makinesi. "Şu giriyor, şu çıkıyor" diye bir kalıp öğrenmiş bir şey.
@@ -22,7 +22,7 @@ LLM = **Large Language Model**, Türkçesi **Büyük Dil Modeli**. Üç kelimeyi
 
 Daha somut: bir LLM, **bir sonraki token'ı tahmin etmek üzere** eğitilmiş dev bir sinir ağı. "Bugün hava çok..." yazsam, modelin kafasındaki olasılık tablosunda *güzel* %42, *soğuk* %18, *patates* %0.00001 gibi değerler var. En olası gelecekleri seçerek (veya rastgele örnekleyerek) cümle kuruyor. Hepsi bu.
 
-ChatGPT, Claude, Gemini, Grok — hepsi aynı temel fikrin farklı ürünleri.
+ChatGPT, Claude, Gemini, Grok — hepsi aynı temel fikri farklı şirketin pazarlamasıyla satıyor. İçeride aşağı yukarı aynı şey dönüyor.
 
 "Yani tek yaptığı bir sonraki kelimeyi tahmin etmek mi?" — evet, gerçekten. Mucize gibi görünen her şey (kod yazması, fıkra anlatması, matematik yapması) o tahmin probleminin yeterince iyi çözüldüğünde **kendiliğinden** ortaya çıkan davranışlar. Buna *emergent behavior* (beliren davranış) deniyor ve hâlâ tam olarak anlaşılmış değil.
 
@@ -30,17 +30,21 @@ ChatGPT, Claude, Gemini, Grok — hepsi aynı temel fikrin farklı ürünleri.
 
 Modelin kafasında "kelime" diye bir şey yok. **Token** var. Token, modelin görebildiği en küçük parça. Bazen tam kelime, bazen parça, bazen tek harf.
 
+Bunu ilk öğrendiğimde tuhaf bir hayal kırıklığı yaşamıştım — "yani model `kahvaltı` kelimesini gerçekten bir bütün olarak görmüyor mu?" Görmüyor. Onun için `kah` ve `valtı` iki ayrı zar.
+
 İlk önemli sezgi: aynı kelime farklı dillerde farklı sayıda token olur.
 
 - İngilizce `breakfast` → genelde **1 token**
-- Türkçe `kahvaltı` → genelde **2 token**: `kah` + `valtı` (veya benzer bir bölünme)
-- `çekoslovakyalılaştıramadıklarımızdanmışsınızcasına` → **15+ token**
+- Türkçe `kahvaltı` → genelde **2 token**: `kah` + `valtı`
+- `çekoslovakyalılaştıramadıklarımızdanmışsınızcasına` → **17 token**
+
+![Aynı kelime, kaç token: Türkçe vs İngilizce karşılaştırması](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/01-token-tr-vs-en.png)
 
 Bu bir tasarım kusuru değil, istatistiksel bir gerçek. Tokenizer (token'a bölen algoritma) eğitim verisindeki **en sık görülen kalıpları** birleştirerek vocabulary (sözlük) oluşturur. İngilizce internette çok daha bol olduğu için İngilizce kelimeler tek parça halinde yer alıyor. Türkçe gibi **eklemeli (agglutinative)** dillerde her ek modelin gözünde bir çıkıntı, ve agresif şekilde parçalanıyor.
 
-Bu seni nerede etkiler?
+Niye umrunda olsun? Üç yerde cebine vuruyor:
 
-- **Para**: API'ler token başına faturalandırır. GPT-5.5: $1.75 / 1M giriş, $14 / 1M çıkış token. Claude Opus 4.7: $5 / $25. Türkçe yazınca **~2 kat fazla token** harcıyorsan, faturan da 2 kat oluyor.
+- **Para**: API'ler token başına faturalandırır. GPT-5.5: $1.75 / 1M giriş, $14 / 1M çıkış token. Claude Opus 4.7: $5 / $25. Geçen ay bir Türkçe RAG sistemi için Claude faturamı hesapladım — aynı içerik, aynı sorular — İngilizce versiyondan **2.3 kat** daha pahalıya çıkıyordu. Tokenizer'la barışık olmayan dil konuşmanın gizli vergisi bu.
 - **Hız**: Daha çok token = daha çok forward pass = daha yavaş cevap.
 - **Context window**: 1M'lik pencereye İngilizce'den daha az Türkçe metin sığar.
 - **Kalite**: `evlerden` kelimesi `ev + ler + den` diye temiz bölünse model çoğul ve durum bilgisini koruyabilir. Saçma yerden parçalanırsa bilgi kaybediliyor.
@@ -54,15 +58,17 @@ Kullanılan başlıca tokenizer algoritmaları:
 | **SentencePiece** | Llama 1/2, Gemma, T5 |
 | **tiktoken** | OpenAI'ın hızlı BPE implementasyonu (Rust) |
 
-Vocabulary boyutu: GPT-4 ~100K, GPT-5 ~200K, Llama 3 ~128K. 2026'da ilginç bir gelişme var: **tokenizer'sız modeller**. Meta'nın **Byte Latent Transformer (BLT)** ham byte üzerinde çalışıyor, sabit bir vocab'a ihtiyaç duymuyor. Mayıs 2026'da Fast BLT çıktı, inference bant genişliğini %50+ azaltıyor. Türkçe gibi düşük temsil edilen diller için uzun vadede iyi haber.
+Vocab boyutları kabaca şöyle: GPT-4 ~100K, GPT-5 ~200K, Llama 3 ~128K. Büyük vocab = daha az parçalanma ama daha şişman embedding tablosu — bedava değil yani.
 
-Kendi metnine kaç token gittiğini merak ediyorsan, **platform.openai.com/tokenizer**'a yapıştırıp bak. Garip bir oyun.
+2026'da ilginç bir gelişme var: **tokenizer'sız modeller**. Meta'nın **Byte Latent Transformer (BLT)** ham byte üzerinde çalışıyor, sabit bir vocab'a ihtiyaç duymuyor. Mayıs 2026'da Fast BLT çıktı, inference bant genişliğini %50+ azaltıyor. Türkçe gibi düşük temsil edilen diller için uzun vadede iyi haber.
+
+Kendi metnine kaç token gittiğini merak ediyorsan, **platform.openai.com/tokenizer**'a yapıştırıp bak. Faturanı yazdıracak şeyi gözünle görmüş olursun.
 
 ## Parametre — "Ayar Düğmeleri"
 
 Modelin içinde **parametre** denen şeyler var. Her parametre, ağdaki bir bağlantıya iliştirilmiş **küçük bir sayı** (bir ağırlık). Modeli eğitmek, milyarlarca düğmeyi azar azar çevirip cevapları daha az yanlış hale getirmek demek.
 
-Ayar düğmesi analojisi tam oturuyor: birine "şu radyodaki 7 milyon düğmeyi çevir, doğru istasyon gelsin" demek gibi. Eğitim algoritması (gradient descent) bunu yapan otomat. Trilyonlarca token gösteriyorsun, her yanlış tahminde düğmeleri usulca düzeltiyor. Aylar sonra düğmeler dilin istatistiksel kalıplarını öğrenmiş halde donuyor.
+Şöyle düşün: 7 milyar düğmeli bir radyo var, ve sen birine "doğru istasyona gelene kadar çevirmeye devam et" diyorsun. Eğitim algoritması (gradient descent) o sabırlı zavallı. Trilyonlarca token gösteriyorsun, her yanlış tahminde düğmeleri usulca düzeltiyor. Aylar sonra düğmeler dilin istatistiksel kalıplarını öğrenmiş halde donuyor.
 
 Niye milyarlarca? Çünkü transformer mimarisi katmanlardan oluşuyor ve her katmandaki "nöron"lar diğerleriyle ağırlıklarla bağlı. Kabaca: `parametre ≈ 12 × katman × gizli boyut²`. Sayılar uçuyor.
 
@@ -79,17 +85,23 @@ Mayıs 2026'daki gerçek rakamlar:
 - **Phi-4** (Microsoft): 14B dense — ufak ama matematik canavarı.
 - **Mistral 7B**: 7.3B, dizüstüne sığar.
 
+![Parametre ölçeği: 2026 model peyzajı, logaritmik](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/02-parametre-olcegi.png)
+
 ### Dense vs MoE
 
 İki tasarım var:
 
 **Dense (yoğun)**: her token için **bütün parametreler** çalışır. Llama 3.1 405B böyle.
 
-**Mixture of Experts (MoE)**: model içinde çok sayıda "uzman" alt-ağ var. Her token için bir yönlendirici (router) sadece **birkaçını** seçer. DeepSeek V3 671 milyar parametreye sahip ama her token'da sadece ~37 milyarlık iş yapar. Beginner sezgisi: dev bir kütüphane, her soruda 1-2 uzmana danışıyor. Çalıştırması ucuz, eğitmesi karışık.
+**Mixture of Experts (MoE)**: model içinde çok sayıda "uzman" alt-ağ var. Her token için bir yönlendirici (router) sadece **birkaçını** seçer. DeepSeek V3 671 milyar parametreye sahip ama her token'da sadece ~37 milyarlık iş yapar. Yani dev bir kütüphanen var ama her soruda sadece 1-2 uzmana danışıyorsun. Inference ucuz; karşılığında eğitim cehennemi.
+
+![Dense vs Mixture of Experts: her token'da kim çalışıyor?](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/03-dense-vs-moe.png)
 
 ### Scaling Laws
 
-**Chinchilla** araştırması (DeepMind, 2022) şu sezgiyi getirdi: parametre kadar **veri** de önemli. Compute-optimal kural: **her parametre için ~20 eğitim token'ı**. Eski dev modeller (GPT-3) verisini yeterince yememişti. Daha küçük ama daha iyi beslenmiş bir model onları geçebilir. Pratik sonuç: 2026'da bir 7B parametre model, 2022'nin 70B'ından sık sık daha iyi performans veriyor.
+**Chinchilla** araştırması (DeepMind, 2022) şu sezgiyi getirdi: parametre kadar **veri** de önemli. Compute-optimal kural: **her parametre için ~20 eğitim token'ı**. Eski dev modeller (GPT-3) verisini yeterince yememişti. Daha küçük ama daha iyi beslenmiş bir model onları geçebilir.
+
+Bu arada parametre sayısıyla övünmek 2023 modası. 2026'da kimse "kaç parametren var" demiyor, "ne kadar veriyle, ne kadar uzun süre eğittin" soruluyor. Chinchilla bunu gösterdi ve büyüklük yarışı sessizce bitti. Pratik sonuç: 2026'da bir 7B parametre model, 2022'nin 70B'ından sık sık daha iyi performans veriyor.
 
 ### Quantization (Niceleme)
 
@@ -97,7 +109,7 @@ Bir 7B modelini eğitirken her parametre 16-bit (2 byte) tutulur — yani ~14 GB
 
 ### "Trilyon" Ne Kadar?
 
-İnsan beyninde ~86 milyar nöron, ~100-500 trilyon sinaps var. Sinapslar parametrelere en yakın analog. GPT-4'ün söylenti 1.76T parametresi bile bir beyne göre 50-300 kat az. Üstelik LLM "parametresi", biyolojik sinapsa göre çok daha basit bir nesne. Trilyon parametre çok, ama beyin değil. Sadece çok.
+Trilyon parametre — kulağa beyin gibi geliyor, değil. İnsan beyninde ~86 milyar nöron, ~100-500 trilyon sinaps var. Sinapslarla parametreyi yan yana koyduğunda biyolojik olan hâlâ 100 kat önde. Üstelik sinaps zamansal, kimyasal, üç boyutlu; parametre tek bir kayan nokta sayısı. Numaranın büyüklüğüne kanıp "modeller artık düşünüyor" demeye kalkma — sayı büyüdü, fizik aynı.
 
 ## Embedding — Anlamı Sayıya Çevirmek
 
@@ -105,11 +117,13 @@ Buraya kadar token'lar (kelimeler) ve parametreler (düğmeler) var. Arada bir k
 
 Embedding nedir: **anlamı temsil eden bir sayı listesi (vektör)**. Tipik boyutlar 768, 1024, 1536 veya 3072. Her metin yüksek-boyutlu bir uzayda **bir nokta**. Anlamca benzer şeyler birbirine yakın, alakasız şeyler uzak.
 
-Klasik örnek, en iyi sezgi pompası. Word2vec'in (2013) ünlü denklemi:
+Buna inanması zor, biliyorum — ama 2013'te Word2vec şunu gösterdi:
 
 > **kral − erkek + kadın ≈ kraliçe**
 
-Yani vektör uzayında "cinsiyet" diye bir yön var. "Kral"dan "erkek" yönünü çıkartıp "kadın" yönünü eklediğinde "kraliçe"ye geliyorsun. Aynısı: **Paris − Fransa + İtalya ≈ Roma**. Word2vec/GloVe çağından bu yana modeller daha karmaşıklaştı, ama sezgi hâlâ ayakta.
+Yani vektör uzayında "cinsiyet" diye bir yön var. "Kral"dan "erkek" yönünü çıkartıp "kadın" yönünü eklediğinde "kraliçe"ye geliyorsun. Aynısı: **Paris − Fransa + İtalya ≈ Roma**.
+
+![Embedding uzayında anlam yönleri: kral-kraliçe ve Paris-Roma analojisi](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/04-embedding-2d-projeksiyon.png)
 
 Modern LLM'lerde ilk katman embedding katmanı. Her token önce ~3072 boyutlu bir vektöre haritalanır, sonra onlarca transformer katmanı bu vektörü bağlam üzerinde dönüştürür. **Embedding katmanı anlam dünyasına geçtiğin kapı.**
 
@@ -122,7 +136,9 @@ Embedding'ler ayrı bir ürün olarak da satılıyor. 2026 liderleri:
 
 İki metnin ne kadar yakın olduğunu **cosine similarity** ile ölçeriz: vektörlerin arasındaki açının kosinüsü. −1 (zıt) ile +1 (aynı yön) arası.
 
-Embedding'ler **RAG**'in temelini oluşturuyor (birazdan göreceğiz) ve **multimodal** çalışıyor. CLIP modeli (OpenAI, 2021) bir köpek fotoğrafıyla "a photo of a dog" metnini **aynı vektör uzayına** yerleştiriyor. Sonuç: bir fotoğraf koleksiyonunda Türkçe cümleyle arama yapabilirsin. "Deniz kenarında baharda piknik" yazıyorsun, kameranın seni bir Mart sabahında çektiği fotoğrafı buluyor. Sihir değil, lineer cebir.
+Embedding'ler **RAG**'in temelini oluşturuyor (birazdan göreceğiz) ve **multimodal** çalışıyor. CLIP modeli (OpenAI, 2021) bir köpek fotoğrafıyla "a photo of a dog" metnini **aynı vektör uzayına** yerleştiriyor. Sonuç: bir fotoğraf koleksiyonunda Türkçe cümleyle arama yapabilirsin. "Deniz kenarında baharda piknik" yazıyorsun, kameranın seni bir Mart sabahında çektiği fotoğrafı buluyor. Sihir değil. Cosine similarity, üç satır numpy ile yazabileceğin bir şey. Tek farkı, embedding'leri eğitmek için birinin bir milyar dolar yakmış olması.
+
+Geçen sene bir projemde kendi blog yazılarımı embedding'e çevirip pgvector'da sorguladım. "WebGPU" yazınca, içinde "WebGPU" kelimesi hiç geçmeyen ASCII shader yazısı ilk sıraya geldi. O an embedding'in indeks değil, **anlam haritası** olduğuna ikna oldum.
 
 ## Context Window — Modelin Kısa Vadeli Hafızası
 
@@ -136,27 +152,27 @@ Bu pencereye giren her şey context'i tüketir:
 - RAG ile enjekte edilen belgeler
 - O an üretmekte olduğu cevap
 
-Pencere dolduğunda model eski şeyleri unutuyor veya sıkıştırıyor. Beginner sezgisi: **modelin masası**. Masada olmayan şey, o tur için yok.
+Pencere dolduğunda model eski şeyleri unutuyor veya sıkıştırıyor. Modelin masası gibi düşün — masada olmayan şey, o tur için yok.
 
 Mayıs 2026 rakamları:
 
-| Model | Context Window |
-|---|---|
-| **Claude Opus 4.7** | 1M token (~750.000 İngilizce kelime ≈ 10-14 roman) |
-| **GPT-5.5** | 1M (API), 400K (Codex) |
-| **Gemini 3.1 Pro** | 1M-2M |
-| **Grok 4.3** | 1M |
-| **Llama 4 Scout** | **10M iddia** (ama 256K'da eğitildi; gerçek kalite şüpheli) |
-| **DeepSeek V4** | 1M |
-| **Phi-4** | 16K |
+![Context window karşılaştırması, logaritmik — Llama 4 Scout iddialı](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/06-context-window.png)
 
-Önemli nokta: **büyük context her zaman iyi değil**. Çok uzun pencerede modeller "lost in the middle" (ortada kaybolma) sorunu yaşıyor — başı ve sonu hatırlıyor, ortadakini görmüyor gibi davranıyor.
+Bir tuzak: "1M context" diye reklam yapıyorlar ama pratikte modeller orta kısmı kaybediyor. Başını ve sonunu okuyor, ortadaki 600 sayfaya nazar atıyor sadece. "Lost in the middle" deniyor.
+
+Üstelik context'i sadece taşıyabilirsin diye doldurmak ucuz değil. İlk 1M context'i denediğimde naive olarak bütün repo'yu yapıştırdım — 800K token. Model girişe 11 saniye, ilk token'a 14 saniye sonra başladı. O gün dersi aldım: bağlam pencerene "her şeyi at" tavrıyla yaklaşma, **seçici besle**.
 
 ## Attention — Modelin Gerçekte Ne Yaptığı
 
-Bir cümleyi anlamlandırmanın sırrı **attention** (dikkat) mekanizmasında. 2017'de Google'ın "Attention Is All You Need" makalesi her şeyi değiştirdi. O kâğıttan önce dil modelleri sıralı (RNN/LSTM) çalışıyordu — yavaştı ve uzun bağlamı tutamıyordu. Transformer **her token'ın diğer her token'a aynı anda bakmasına** izin verdi.
+Bir cümleyi anlamlandırmanın sırrı **attention** (dikkat) mekanizmasında. 2017'de Google'ın "Attention Is All You Need" makalesi çıktı — ve dürüst olalım, o tarihten önce yazılmış her LSTM tabanlı dil modeli kodunu artık müzeye kaldırabilirsin. Transformer **her token'ın diğer her token'a aynı anda bakmasına** izin verdi.
 
-Sezgi: "Kıyıdaki banka dik" cümlesinde "banka"yı anlamak için modelin "kıyı" ve "dik" kelimelerine **daha çok ağırlık vermesi**, "para" kavramına **az ağırlık vermesi** lazım. Attention bunu sayısal yapıyor — her token diğer her token için bir "ne kadar dikkat edeyim" skoru üretiyor. Bu işlem paralel yapılabildiği için GPU'larda hızla eğitilebiliyor. Modern LLM patlamasının teknik temeli budur.
+Sezgi: "Kıyıdaki banka dik" cümlesinde "banka"yı anlamak için modelin "kıyı" ve "dik" kelimelerine **daha çok ağırlık vermesi**, "para" kavramına **az ağırlık vermesi** lazım. Attention bunu sayısal yapıyor — her token diğer her token için bir "ne kadar dikkat edeyim" skoru üretiyor.
+
+![Attention: 'banka' token'ı 'Kıyı' ve 'dik' token'larına ağırlık veriyor](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/05-attention-isi-haritasi.png)
+
+Bu işlem paralel yapılabildiği için GPU'larda hızla eğitilebiliyor. Modern LLM patlamasının teknik temeli budur.
+
+Attention'ı sezgi olarak içselleştirdiğim an Karpathy'nin tensor üzerinde elle yazdığı 8-satırlık `softmax(QK^T / sqrt(d)) V` parçasını sayfaya yazdığım gündü. O sekiz satır olmasaydı LLM patlaması da olmazdı. Sekiz satır.
 
 ## Prompt — Ne Yazdığın Önemli
 
@@ -175,15 +191,25 @@ Kendi tecrübemden pratik kurallar:
 - **Format söyle**. "Markdown tablo halinde", "yalnızca JSON", "her madde tek cümle".
 - **Olumsuzlama kötü**. "X yapma" yerine "Y yap" daha iyi sonuç verir.
 
+Bu kuralları takip etmeye başladıktan sonra prompt'larım iki kat daha uzun, cevaplar üç kat daha kullanışlı oldu. Kısa prompt diye bir kahramanlık yok; sıkıştırılmış prompt vasat cevap üretir.
+
 ## Hallucination — Modelin Kafadan Atması
 
-Bir LLM **kendinden emin bir şekilde yanlış şey söyleyebiliyor**. Hayali kitap referansı, var olmayan API fonksiyonu, yanlış tarih, uydurma alıntı. Bu fenomenin adı **hallucination** (halüsinasyon).
+Buna kibarca "hallucination" diyorlar. Türkçesi: model sıkıştığında kafadan sallıyor, hem de yüzünü kızartmadan. Hayali kitap referansı, var olmayan API fonksiyonu, yanlış tarih, uydurma alıntı.
+
+Geçen hafta GPT-5.5 bana `aiohttp-streaming` diye bir kütüphane önerdi, örnek kodla beraber. Çok güzel kodluyordu. Tek sorun: o kütüphane var olmuyor. PyPI'da yok, GitHub'da yok, hiçbir yerde yok. Model uydurmuş ve eline kâğıt kalem alıp imzalamış.
 
 Neden oluyor? Çünkü model **bir veritabanı değil**. İçinde "doğru cevaplar tablosu" yok. Yaptığı tek şey eğitim verisindeki kalıplara bakıp **bir sonraki istatistiksel olarak makul token'ı** üretmek. Sorduğun konuda veri yetersizse, model yine de en mantıklı görünen cümleyi kurar — ve o cümle uydurma olabilir.
 
-Daha kötüsü: OpenAI'ın Eylül 2025 makalesi ("Why Language Models Hallucinate") gösterdi ki eğitim süreçleri **emin tahmin etmeyi**, "bilmiyorum" demekten **daha çok ödüllendiriyor**. Test puanı = 0 ile "bilmiyorum" denmez, tahmin = en azından kazanma şansı var. Modeller bu yüzden blöf yapmayı öğreniyor.
+Halüsinasyon bir sonraki versiyonda yamayla geçecek bir bug değil — mimarinin omurgasında. OpenAI bile kendi Eylül 2025 makalesinde ("Why Language Models Hallucinate") "eğitim sürecimiz blöfü ödüllendiriyor" diye itiraf ediyor. Test puanı = 0 ile "bilmiyorum" denmez, tahmin = en azından kazanma şansı var. Modeller bu yüzden blöf yapmayı öğreniyor. Bunu okuduğumda iki şey hissetmiştim: birincisi "tahmin etmiştim", ikincisi "demek ki yıllarca böyle kalacak".
 
-**Beginner kuralı**: Bir LLM'in söylediği her tarih, sayı, isim, alıntı veya API çağrısını birinci elden kaynakla doğrulamadan kullanma. Halüsinasyon mimarinin yapısal bir özelliği, bir sonraki versiyonda kaybolacak bir bug değil.
+**Beginner kuralı**: Bir LLM'in söylediği her tarih, sayı, isim, alıntı veya API çağrısını birinci elden kaynakla doğrulamadan kullanma.
+
+> **Yaygın yanlış anlamalar — kısa liste**
+>
+> - *"LLM internete bağlı bir veritabanıdır."* Değil. Eğitim verisi bir kesim tarihinde donmuş; "web search" gibi araçlar bağlanırsa o ayrı.
+> - *"Büyük context her zaman iyidir."* Değil. Lost-in-the-middle. Ayrıca her token para.
+> - *"Halüsinasyon RLHF ile çözülür."* Çözülmüyor. RLHF ton ayarlıyor, fact-checker eklemiyor.
 
 ## Pretraining, Fine-tuning, RLHF
 
@@ -201,12 +227,7 @@ Modelin eğitim verisinin bir **kesim tarihi** var. ChatGPT'ye "bugünkü hava n
 
 **Retrieval-Augmented Generation** = sorgu zamanında ilgili belgeleri **modelin context'ine enjekte etmek**.
 
-Tipik akış:
-
-1. Belgeleri parçalara böl (chunk)
-2. Her parçayı embedding modeliyle vektöre çevir
-3. Vektör veritabanına (Pinecone, Qdrant, pgvector) kaydet
-4. Kullanıcı soru sorduğunda → sorunun embedding'ini çıkar → cosine similarity ile en yakın 5-10 parçayı çek → bunları LLM'in prompt'una yapıştır → cevap üret
+![RAG akışı: hazırlık (offline) + sorgu (online)](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/07-rag-akis.png)
 
 Niye iyi: model artık o özel belgelere referansla cevap veriyor. Halüsinasyon dramatik şekilde düşer, kaynak gösterebilir, yeni veri eklemek için modeli yeniden eğitmek gerekmez.
 
@@ -214,7 +235,8 @@ Niye iyi: model artık o özel belgelere referansla cevap veriyor. Halüsinasyon
 
 - RAG = **bilgiyi değiştirmek** için (yeni haberler, şirket içi belgeler)
 - Fine-tuning = **davranışı/üslubu** değiştirmek için (hukuki ton, özel format)
-- İkisi rakip değil, beraber kullanılır.
+
+İkisi rakip değil, beraber kullanılır. Pratikte gördüğüm hata sırası şu: insanlar önce fine-tuning'e koşuyor, halbuki istedikleri davranış değişikliği değil bilgi enjeksiyonu. Hangi kovaya atılacağı belli olunca proje aniden bir hafta kısalıyor.
 
 ## Training vs Inference — İki Farklı Dünya
 
@@ -258,6 +280,10 @@ Bu modeller **aynı temel mimaride** (Transformer) ama eğitim verisi, ince-ayar
 
 **Microsoft — Phi-4**: 14B dense, matematik/mantık odaklı. Telefonda bile çalışabilen Phi-4-mini var.
 
+### Açık olayım — günlük olarak ne kullanıyorum
+
+Kod için Claude Opus 4.7, hızlı soru-cevap için ChatGPT, uzun PDF özetlemek için Gemini 3 Pro, Türkçe çeviri için Qwen 3.6 (sürpriz şekilde Türkçesi en temiz olan o). **Hiçbir model her şeyde en iyi değil ve bunu sana satan herkes yalan söylüyor.**
+
 ### Kapalı vs Açık — Beginner İçin Ne Demek?
 
 - **Kapalı**: API'ye veya web'e bağlanırsın. Token başına ödersin. Ağırlıklar şirkette kalır. **Sıfır kurulum, sınır kalite.** Teknik olmayan kullanıcı için kazanan.
@@ -267,11 +293,13 @@ Bu modeller **aynı temel mimaride** (Transformer) ama eğitim verisi, ince-ayar
 
 | Senaryo | Tavsiye |
 |---|---|
+| **Türkçe özelinde** | Closed: Gemini 3 Pro, GPT-5.5. Açık: Qwen 3.6 veya Türkçe fine-tune'lar (Trendyol-LLM, WiroAI) |
 | Bedava, tarayıcıda hızlı sohbet | ChatGPT free, Claude.ai free, Gemini, Copilot |
 | En iyi genel performans | Claude Opus 4.7 (yazı/kod), GPT-5.5 Thinking (genel), Gemini 3 Pro (multimodal) |
 | Dizüstünde yerelde çalıştır | Qwen 3.6 7B, Llama 3.3-8B, Phi-4-mini (Ollama ile) |
-| Türkçe özelinde | Closed: Gemini 3 Pro, GPT-5.5. Açık: Qwen 3.6 veya Türkçe fine-tune'lar (Trendyol-LLM, WiroAI) |
 | Projende API olarak kullan | Claude Sonnet 4.6 (ucuz + güçlü), GPT-5.5-mini, DeepSeek V3.2 (~10× ucuz), Mistral (AB veri) |
+
+![Hangi modeli seçmeli? — basit bir karar ağacı](https://wafihblvtsscdhhxpnol.supabase.co/storage/v1/object/public/blog-images/llm-nedir/08-model-secim-karar-agaci.png)
 
 ## Yerel LLM Ekosistemi
 
@@ -282,6 +310,8 @@ Dizüstüne LLM kurmak istersen şunları duyacaksın:
 - **Ollama** — `ollama run llama3` komutuyla model çalıştırırsın. OpenAI-uyumlu yerel API sunar. Geliştirici için ideal.
 - **LM Studio** — GUI'li alternatif. Hugging Face entegre, tıkla-indir. Teknik olmayan kullanıcı için iyi.
 - **Jan** — açık kaynak ChatGPT yerine geçen masaüstü uygulaması.
+
+Ben günlük olarak M2 Pro üstünde Qwen 3.6 7B çalıştırıyorum. İlk token gecikmesi 300ms, sonrası saniyede ~35 token. Bu sayılar 2023'te aklın alacağı bir şey değildi. Apple'ın unified memory mimarisi, hiç planlamadığı bir şekilde yerel LLM ekosistemini kurtardı.
 
 10 dakikalık deneme: Ollama indir, `ollama run qwen2.5:7b` yaz, Türkçe konuş. Dizüstünde yerel, ücretsiz, internetsiz.
 
@@ -296,8 +326,14 @@ Bu sözlük temel. İlerlemek istiyorsan şu sırayı öneririm:
 
 ## Kapanış
 
-Buraya kadar geldiysen tebrikler — artık bir LLM tartışmasında **tam olarak hangi kavramın eksik tartışıldığını** görebilirsin. "AI hayal görüyor" denildiğinde halüsinasyonun **mimari** bir özellik olduğunu, bir patch'le geçmeyeceğini söyleyebilirsin. "Llama 4'ün 10M context'i var" dediklerinde **ne ölçüde gerçek** olduğunu sorgulayabilirsin. "Bedava yerel model" denince Ollama'yı açıp 5 dakikada deneyebilirsin.
+Buraya kadar geldiysen artık benim akrabamdan birkaç kademe öndesin — telefonda "kestim seni" diyemeyeceği bir noktadasın. Daha önemlisi: bir sonraki "AI X yapacak" başlığını gördüğünde, hangi katmanda gerçekten konuşulduğunu anlıyorsun. "AI hayal görüyor" denildiğinde halüsinasyonun **mimari** bir özellik olduğunu, bir patch'le geçmeyeceğini söyleyebilirsin. "Llama 4'ün 10M context'i var" dediklerinde "ortayı kaybedebilir" diye atılabilirsin.
 
 Yine de bilmediğin bir şeye denk gelirsen şunu hatırla: çoğu LLM kavramı, üstündeki jargon kabuğunu soyduğunda **istatistik + lineer cebir + biraz mühendislik**. Mistik bir şey yok. Sadece çok büyük bir tahmin makinesi, çok iyi tahmin etmesi öğretilmiş.
 
-Sonraki yazıda RAG'i sıfırdan elimle örerek anlatacağım — bu makinenin bilgisini güncel tutmanın diğer açısı. Şimdilik elveda, ve token'ların seninle olsun.
+Ödevin var: bu yazıdan bir kavram seç, hangisi ilgini çektiyse, ve ChatGPT veya Claude'a "bana bunu 5 yaşındaki çocuğa anlat" yazıp gör. Sonra "şimdi profesyonele anlat" de. Aradaki farkı oku. LLM'in ne olduğunu anlatmadan, ne olmadığını göreceksin.
+
+Akrabam hâlâ ChatGPT'yi "şu yazı yazan şey" diye anıyor. Belki bir gün ona da bu yazıyı okutacağım. Hâlâ telefonu kapatacak diye korkuyorum.
+
+---
+
+*Bu yazıyı yazarken bir agent takımı kullandım: bir ses denetçisi, bir görsel mimar ve bir Python ressamı paralelde çalıştı; yukarıdaki sekiz şema da o ekipten çıktı. Bir sonraki yazıda RAG'i sıfırdan, satır satır kuracağız.*
