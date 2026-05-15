@@ -38,5 +38,6 @@ markdown.md
 
 # agent research / scratch
 .firecrawl/
+.playwright-mcp/
 CLAUDE.md
 

@@ -1,4 +1,10 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
+
 export function Background() {
+  const pathname = usePathname()
+  if (pathname === '/' || pathname === '/blog' || pathname?.startsWith('/blog/')) return null
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       {/* Base gradient */}

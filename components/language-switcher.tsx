@@ -10,10 +10,9 @@ interface LanguageSwitcherProps {
   baseSlug: string
 }
 
-export function LanguageSwitcher({ 
-  currentLanguage = 'en', 
-  availableLanguages = [], 
-  baseSlug 
+export function LanguageSwitcher({
+  currentLanguage = 'en',
+  availableLanguages = [],
 }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -27,43 +26,58 @@ export function LanguageSwitcher({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-muted/20 hover:bg-muted/30 rounded-md transition-colors"
+        className="inline-flex items-center gap-2 px-3 py-1.5 serif-display text-[11px] tracking-[0.28em] uppercase classical-ink-muted hover:gold-text transition-colors border rounded-sm"
+        style={{ borderColor: 'hsl(var(--ink) / 0.15)' }}
       >
-        <Globe className="w-4 h-4" />
+        <Globe className="w-3.5 h-3.5" strokeWidth={1.6} />
         <span>{currentLangName}</span>
-        <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          strokeWidth={1.6}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-1 right-0 bg-background border border-border rounded-md shadow-lg z-10 min-w-[120px]">
-          {availableLanguages.map((lang) => (
-            <Link
-              key={lang.code}
-              href={`/blog/${lang.slug}`}
-              className={`block px-3 py-2 text-sm hover:bg-muted/30 transition-colors first:rounded-t-md last:rounded-b-md ${
-                lang.code === currentLanguage ? 'bg-muted/20 font-medium' : ''
-              }`}
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="flex items-center justify-between">
-                <span>{lang.code.toUpperCase()}</span>
-                {lang.code === currentLanguage && (
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                )}
-              </div>
-              <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                {lang.title}
-              </div>
-            </Link>
-          ))}
+        <div
+          className="absolute top-full mt-2 right-0 bg-white border rounded-sm shadow-md z-20 min-w-[180px] overflow-hidden"
+          style={{ borderColor: 'hsl(var(--ink) / 0.12)' }}
+        >
+          {availableLanguages.map((lang) => {
+            const isActive = lang.code === currentLanguage
+            return (
+              <Link
+                key={lang.code}
+                href={`/blog/${lang.slug}`}
+                className="block px-4 py-3 hover:bg-[hsl(var(--cream)/0.6)] transition-colors border-b last:border-0"
+                style={{ borderColor: 'hsl(var(--ink) / 0.06)' }}
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="serif-display text-[11px] tracking-[0.32em] uppercase classical-ink">
+                    {lang.code.toUpperCase()}
+                  </span>
+                  {isActive && (
+                    <span
+                      aria-hidden
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: 'hsl(var(--gold))' }}
+                    />
+                  )}
+                </div>
+                <div className="serif-body italic text-[12px] classical-ink-muted mt-1 truncate">
+                  {lang.title}
+                </div>
+              </Link>
+            )
+          })}
         </div>
       )}
 
-      {/* Backdrop to close dropdown */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-0"
+          className="fixed inset-0 z-10"
           onClick={() => setIsOpen(false)}
+          aria-hidden
         />
       )}
     </div>

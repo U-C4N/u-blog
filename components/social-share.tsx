@@ -1,73 +1,83 @@
-'use client';
+'use client'
 
-import { Twitter, Instagram, Share2 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Twitter, Instagram, Share2, Check } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 
 interface SocialShareProps {
-  title: string;
-  url: string;
+  title: string
+  url: string
 }
 
 export function SocialShare({ title, url }: SocialShareProps) {
-  const [copied, setCopied] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const handleInstagramShare = () => {
-    navigator.clipboard.writeText(`${title} ${url}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`${title} ${url}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside)
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button 
-        className="flex items-center text-muted-foreground hover:text-foreground transition-colors p-1"
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Share post"
+        className="inline-flex items-center gap-2 px-3 py-1.5 serif-display text-[11px] tracking-[0.28em] uppercase classical-ink-muted hover:gold-text transition-colors border rounded-sm"
+        style={{ borderColor: 'hsl(var(--ink) / 0.15)' }}
       >
-        <Share2 className="w-4 h-4" />
+        <Share2 className="w-3.5 h-3.5" strokeWidth={1.6} />
+        <span>Share</span>
       </button>
+
       {isOpen && (
-        <div className="absolute left-0 mt-2 flex flex-col gap-3 bg-background border rounded-md p-3 shadow-md z-10">
-          <div className="flex gap-3">
-            <a 
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-muted"
-              aria-label="Share on Twitter"
-            >
-              <Twitter className="w-5 h-5" />
-            </a>
-            <button
-              onClick={handleInstagramShare}
-              className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-muted"
-              aria-label="Share on Instagram (Copy to clipboard)"
-            >
-              <Instagram className="w-5 h-5" />
-            </button>
-          </div>
-          {copied && (
-            <div className="text-xs text-green-500 mt-1 text-center">
-              Link copied!
-            </div>
-          )}
+        <div
+          className="absolute right-0 mt-2 flex flex-col gap-2 bg-white border rounded-sm shadow-md z-20 p-3 min-w-[180px]"
+          style={{ borderColor: 'hsl(var(--ink) / 0.12)' }}
+        >
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-3 py-2 classical-sans text-[13px] classical-ink hover:bg-[hsl(var(--cream)/0.6)] hover:gold-text transition-colors rounded-sm"
+          >
+            <Twitter className="w-4 h-4" strokeWidth={1.6} />
+            <span>Twitter</span>
+          </a>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="inline-flex items-center gap-3 px-3 py-2 classical-sans text-[13px] classical-ink hover:bg-[hsl(var(--cream)/0.6)] hover:gold-text transition-colors rounded-sm text-left"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 gold-text" strokeWidth={1.8} />
+                <span className="gold-text">Link copied</span>
+              </>
+            ) : (
+              <>
+                <Instagram className="w-4 h-4" strokeWidth={1.6} />
+                <span>Copy link</span>
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>
-  );
-} 
+  )
+}
