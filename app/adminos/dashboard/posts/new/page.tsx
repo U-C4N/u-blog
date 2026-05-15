@@ -104,7 +104,7 @@ export default function NewPostPage() {
       if (error) throw error
 
       // Revalidate blog pages (cookie-authenticated server route).
-      fetch('/api/revalidate', { method: 'POST' }).catch((err) =>
+      fetch(`/api/revalidate?slug=${encodeURIComponent(slug)}`, { method: 'POST' }).catch((err) =>
         console.warn('Revalidate ping failed:', err),
       )
       fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})

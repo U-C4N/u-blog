@@ -204,7 +204,7 @@ export function EditPostForm({ initialPost }: EditPostFormProps) {
       }
 
       // Revalidate blog pages (cookie-authenticated server route).
-      fetch('/api/revalidate', { method: 'POST' }).catch((err) =>
+      fetch(`/api/revalidate?slug=${encodeURIComponent(updatePayload.slug)}`, { method: 'POST' }).catch((err) =>
         console.warn('Revalidate ping failed:', err),
       )
       fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(toAbsoluteSiteUrl('/sitemap.xml'))}`).catch(() => {})
