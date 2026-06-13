@@ -41,3 +41,9 @@ markdown.md
 .playwright-mcp/
 CLAUDE.md
 
+# personal content & local tooling (kept local, not published)
+/drafts/
+/scripts/
+/.claude/
+/skills/
+
